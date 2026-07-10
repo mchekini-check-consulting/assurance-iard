@@ -11,6 +11,34 @@ Plateforme d'assurance IARD organisée en **trois projets** :
 Les applications communiquent de façon asynchrone via Kafka (déclaration de
 sinistre → traitement → décision).
 
+## Accès à la plateforme déployée (VM : 187.77.175.250)
+
+### Applications
+
+| Application | URL |
+|---|---|
+| Espace client | http://187.77.175.250 |
+| Gestion des sinistres | http://187.77.175.250:81 |
+| Moteur tarifaire (API) | http://187.77.175.250:8081/api/pricing/habitation |
+| Kafka UI | http://187.77.175.250:8085 |
+
+Les API backends sont proxifiées par les frontends : `http://187.77.175.250/api/...`
+(espace client) et `http://187.77.175.250:81/api/...` (sinistres).
+Code OTP de signature (mock) : **6208**.
+
+### Bases de données
+
+| Paramètre | iard-client | sinistre-treatment |
+|---|---|---|
+| URL JDBC | `jdbc:postgresql://187.77.175.250:5432/iard_db` | `jdbc:postgresql://187.77.175.250:5433/sinistre_db` |
+| Utilisateur | `iard_user` | `sinistre_user` |
+| Mot de passe | `iard_password` | `sinistre_password` |
+
+### Kafka
+
+Bootstrap servers : `187.77.175.250:9092` (PLAINTEXT, sans authentification —
+nécessite `KAFKA_EXTERNAL_HOST=187.77.175.250` dans le `.env` de la VM).
+
 ## Images Docker
 
 Cinq images publiées sur GHCR (GitHub Container Registry) :
