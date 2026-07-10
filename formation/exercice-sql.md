@@ -10,43 +10,43 @@ un contrat référence son devis (`devis_id`) et son souscripteur (`user_id`).
 
 ---
 
-## Niveau facile (8 requêtes)
+## Niveau facile (8 requêtes) — maîtrise du SELECT et des conditions
 
-**1.** Combien y a-t-il de contrats en base ?
+**1.** Affichez le numéro, la formule et la prime TTC de tous les contrats.
 
-**2.** Affichez l'email, le nom et le prénom des 10 derniers utilisateurs inscrits.
+**2.** Affichez les contrats dont le statut est `ACTIF` (numéro et prime TTC).
 
-**3.** Listez le numéro et la prime TTC des contrats de formule `PREMIUM` dont la prime TTC dépasse 500 €, du plus cher au moins cher.
+**3.** Affichez les contrats de formule `PREMIUM` dont la prime TTC est comprise **entre 400 et 600 €** (`BETWEEN`).
 
-**4.** Quels sont les différents statuts présents dans la table `contrats` ?
+**4.** Affichez les contrats dont la formule est `CONFORT` **ou** `PREMIUM`, en une seule condition (`IN`).
 
-**5.** Combien de devis y a-t-il pour chaque statut ?
+**5.** Affichez l'email et le nom des utilisateurs dont le nom **commence par** `Seed` (`LIKE`).
 
-**6.** Combien de contrats ont été signés aujourd'hui ?
+**6.** Affichez les contrats **non résiliés** dont la prime TTC dépasse 600 €, **ou** ceux de formule `ESSENTIELLE` dont la prime TTC est inférieure à 300 € — en une seule requête (attention aux parenthèses entre `AND` et `OR`).
 
-**7.** Quelle est la prime TTC minimale, maximale et moyenne des contrats `ACTIF` ? (arrondir la moyenne à 2 décimales)
+**7.** Affichez les devis qui n'ont **pas encore de tarif calculé** (`resultat_tarif` vide — `IS NULL`).
 
-**8.** Combien d'utilisateurs ont une adresse email de test (se terminant par `@perf.iard.test`) ?
+**8.** Affichez les 5 contrats les plus chers : numéro, formule et prime TTC (`ORDER BY` + `LIMIT`).
 
 ---
 
 ## Niveau intermédiaire (8 requêtes)
 
-**9.** Top 10 des utilisateurs qui possèdent le plus de contrats : email et nombre de contrats.
+**9.** Comptez le nombre de contrats pour chaque statut (`GROUP BY`).
 
-**10.** Pour chaque formule, le nombre de contrats, la prime TTC totale et la prime TTC moyenne.
+**10.** Top 10 des utilisateurs qui possèdent le plus de contrats : email et nombre de contrats (`JOIN` + `GROUP BY`).
 
 **11.** Listez les utilisateurs qui n'ont **aucun** contrat (deux écritures possibles : `LEFT JOIN` ou `NOT EXISTS`).
 
-**12.** Par période (`paiements.periode`), affichez le nombre de prélèvements réussis, le nombre d'échecs et le montant total encaissé (statut `SUCCES` uniquement).
+**12.** Pour chaque formule : le nombre de contrats, la prime TTC totale, la prime minimale et la prime maximale.
 
-**13.** En joignant les contrats à leur devis, comptez le nombre de contrats par **type de bien** (`APPARTEMENT` / `MAISON`) — le type est dans le JSONB `devis.donnees_risque`.
+**13.** Par période (`paiements.periode`), affichez le nombre de prélèvements réussis, le nombre d'échecs et le montant total encaissé (statut `SUCCES` uniquement).
 
-**14.** Quels utilisateurs détiennent des contrats d'au moins 2 **formules différentes** ? Affichez l'email et le nombre de formules distinctes.
+**14.** En joignant les contrats à leur devis, comptez le nombre de contrats par **type de bien** (`APPARTEMENT` / `MAISON`) — le type est dans le JSONB `devis.donnees_risque`.
 
-**15.** Listez les prélèvements en échec (`FAILED`) avec l'email du client, le numéro de contrat et le montant (jointure sur 3 tables).
+**15.** Quels utilisateurs détiennent des contrats d'au moins 2 **formules différentes** ? Affichez l'email et le nombre de formules distinctes (`HAVING`).
 
-**16.** Quelle est la surface habitable moyenne des biens assurés, par formule de contrat ? (la surface est dans le JSONB du devis — attention à la conversion de type)
+**16.** Listez les prélèvements en échec (`FAILED`) avec l'email du client, le numéro de contrat et le montant (jointure sur 3 tables).
 
 ---
 
@@ -55,13 +55,13 @@ un contrat référence son devis (`devis_id`) et son souscripteur (`user_id`).
 **17.** Pour **chaque formule**, le top 3 des contrats les plus chers (numéro, formule, prime TTC, rang).
 *Indice : fonction fenêtre `ROW_NUMBER() OVER (PARTITION BY ...)*.
 
-**18.** Pour chaque contrat actif, comptez le nombre de **garanties incluses** (tableau JSONB `garanties->'garantiesIncluses'`), puis donnez la moyenne de ce nombre par formule.
-*Indice : `jsonb_array_length`.*
+**18.** Listez les **libellés distincts** des garanties incluses dans les contrats — elles sont dans le tableau JSONB `garanties->'garantiesIncluses'`.
+*Indice : `jsonb_array_elements`.*
 
 **19.** Affichez l'évolution **cumulée** du nombre de contrats créés jour par jour : date, contrats créés ce jour, total cumulé.
 *Indice : `SUM(...) OVER (ORDER BY ...)`.*
 
-**20.** Pour chaque contrat, calculez l'écart entre sa prime TTC et la prime moyenne de **sa** formule, et affichez les 10 contrats les plus « au-dessus de la moyenne » (numéro, formule, prime, moyenne de la formule arrondie, écart arrondi).
+**20.** Pour chaque contrat, calculez l'écart entre sa prime TTC et la prime moyenne de **sa** formule, et affichez les 10 contrats les plus « au-dessus de la moyenne » (numéro, formule, prime, écart).
 *Indice : `AVG(...) OVER (PARTITION BY ...)` — pas de `GROUP BY`.*
 
 ---
@@ -74,58 +74,59 @@ un contrat référence son devis (`devis_id`) et son souscripteur (`user_id`).
 
 ```sql
 -- 1
-SELECT count(*) FROM contrats;
+SELECT numero_contrat, formule, prime_ttc
+FROM contrats;
 
 -- 2
-SELECT email, nom, prenom
-FROM users
-ORDER BY created_at DESC
-LIMIT 10;
+SELECT numero_contrat, prime_ttc
+FROM contrats
+WHERE statut = 'ACTIF';
 
 -- 3
 SELECT numero_contrat, prime_ttc
 FROM contrats
-WHERE formule = 'PREMIUM' AND prime_ttc > 500
-ORDER BY prime_ttc DESC;
+WHERE formule = 'PREMIUM'
+  AND prime_ttc BETWEEN 400 AND 600;
 
 -- 4
-SELECT DISTINCT statut FROM contrats;
+SELECT numero_contrat, formule, prime_ttc
+FROM contrats
+WHERE formule IN ('CONFORT', 'PREMIUM');
 
 -- 5
-SELECT statut, count(*)
-FROM devis
-GROUP BY statut;
+SELECT email, nom
+FROM users
+WHERE nom LIKE 'Seed%';
 
 -- 6
-SELECT count(*)
+SELECT numero_contrat, formule, statut, prime_ttc
 FROM contrats
-WHERE date_signature::date = CURRENT_DATE;
+WHERE (statut <> 'RESILIE' AND prime_ttc > 600)
+   OR (formule = 'ESSENTIELLE' AND prime_ttc < 300);
 
 -- 7
-SELECT min(prime_ttc), max(prime_ttc), round(avg(prime_ttc), 2)
-FROM contrats
-WHERE statut = 'ACTIF';
+SELECT id, statut, created_at
+FROM devis
+WHERE resultat_tarif IS NULL;
 
 -- 8
-SELECT count(*)
-FROM users
-WHERE email LIKE '%@perf.iard.test';
+SELECT numero_contrat, formule, prime_ttc
+FROM contrats
+ORDER BY prime_ttc DESC
+LIMIT 5;
 
 -- 9
+SELECT statut, count(*)
+FROM contrats
+GROUP BY statut;
+
+-- 10
 SELECT u.email, count(*) AS nb_contrats
 FROM contrats c
 JOIN users u ON u.id = c.user_id
 GROUP BY u.email
 ORDER BY nb_contrats DESC
 LIMIT 10;
-
--- 10
-SELECT formule,
-       count(*)              AS nb_contrats,
-       sum(prime_ttc)        AS prime_totale,
-       round(avg(prime_ttc), 2) AS prime_moyenne
-FROM contrats
-GROUP BY formule;
 
 -- 11 (variante LEFT JOIN)
 SELECT u.email
@@ -139,6 +140,15 @@ FROM users u
 WHERE NOT EXISTS (SELECT 1 FROM contrats c WHERE c.user_id = u.id);
 
 -- 12
+SELECT formule,
+       count(*)       AS nb_contrats,
+       sum(prime_ttc) AS prime_totale,
+       min(prime_ttc) AS prime_min,
+       max(prime_ttc) AS prime_max
+FROM contrats
+GROUP BY formule;
+
+-- 13
 SELECT periode,
        count(*) FILTER (WHERE statut = 'SUCCES') AS nb_succes,
        count(*) FILTER (WHERE statut = 'FAILED') AS nb_echecs,
@@ -147,32 +157,25 @@ FROM paiements
 GROUP BY periode
 ORDER BY periode;
 
--- 13
+-- 14
 SELECT d.donnees_risque->>'typeBien' AS type_bien, count(*)
 FROM contrats c
 JOIN devis d ON d.id = c.devis_id
 GROUP BY type_bien;
 
--- 14
+-- 15
 SELECT u.email, count(DISTINCT c.formule) AS nb_formules
 FROM contrats c
 JOIN users u ON u.id = c.user_id
 GROUP BY u.email
 HAVING count(DISTINCT c.formule) >= 2;
 
--- 15
+-- 16
 SELECT u.email, c.numero_contrat, p.montant
 FROM paiements p
 JOIN contrats c ON c.id = p.contrat_id
 JOIN users u    ON u.id = c.user_id
 WHERE p.statut = 'FAILED';
-
--- 16
-SELECT c.formule,
-       round(avg((d.donnees_risque->>'surfaceHabitable')::int), 1) AS surface_moyenne
-FROM contrats c
-JOIN devis d ON d.id = c.devis_id
-GROUP BY c.formule;
 
 -- 17
 SELECT numero_contrat, formule, prime_ttc, rang
@@ -185,15 +188,10 @@ WHERE rang <= 3
 ORDER BY formule, rang;
 
 -- 18
-SELECT formule,
-       round(avg(nb_garanties), 2) AS moyenne_garanties_incluses
-FROM (
-    SELECT formule,
-           jsonb_array_length(garanties->'garantiesIncluses') AS nb_garanties
-    FROM contrats
-    WHERE statut = 'ACTIF'
-) t
-GROUP BY formule;
+SELECT DISTINCT g->>'libelle' AS garantie
+FROM contrats,
+     jsonb_array_elements(garanties->'garantiesIncluses') g
+ORDER BY garantie;
 
 -- 19
 SELECT jour,
@@ -208,8 +206,7 @@ ORDER BY jour;
 
 -- 20
 SELECT numero_contrat, formule, prime_ttc,
-       round(moyenne_formule, 2) AS moyenne_formule,
-       round(prime_ttc - moyenne_formule, 2) AS ecart
+       prime_ttc - moyenne_formule AS ecart
 FROM (
     SELECT numero_contrat, formule, prime_ttc,
            AVG(prime_ttc) OVER (PARTITION BY formule) AS moyenne_formule
