@@ -6,16 +6,22 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY_USER: mchekini
+  REGISTRY: ghcr.io
+  OWNER: mchekini-check-consulting
   VERSION: "1.0"
 
 jobs:
   # ------------------------------------------------------------------
-  # Build des 5 images en parallèle et push sur DockerHub.
+  # Build des 5 images en parallèle et push sur GHCR.
+  # L'authentification utilise le GITHUB_TOKEN natif : aucun secret
+  # supplémentaire à configurer pour le registre.
   # --platform linux/amd64 : les images doivent tourner sur la VM Linux.
   # ------------------------------------------------------------------
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         include:
@@ -36,11 +42,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login DockerHub
+      - name: Login GHCR
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push ${{ matrix.image }}
         uses: docker/build-push-action@v6
@@ -48,7 +55,7 @@ jobs:
           context: ${{ matrix.context }}
           platforms: linux/amd64
           push: true
-          tags: ${{ env.REGISTRY_USER }}/${{ matrix.image }}:${{ env.VERSION }}
+          tags: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.image }}:${{ env.VERSION }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,scope=${{ matrix.image }},mode=max
 
@@ -56,10 +63,15 @@ jobs:
   # Déploiement sur la VM : copie du compose + conf nginx, puis
   # docker compose pull / up. Secrets requis :
   #   VM_HOST (IP de la VM), VM_USER, VM_SSH_KEY (clé privée)
+  # Le pull sur GHCR est authentifié avec le GITHUB_TOKEN du run
+  # (nécessaire tant que les packages ne sont pas publics).
   # ------------------------------------------------------------------
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,6 +101,8 @@ jobs:
               cp .env.example .env
               echo "ATTENTION : ~/iard/.env créé depuis l'exemple, renseigner les secrets."
             fi
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose pull
             docker compose up -d --remove-orphans
+            docker logout ghcr.io
             docker image prune -f

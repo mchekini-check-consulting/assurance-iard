@@ -13,15 +13,15 @@ sinistre → traitement → décision).
 
 ## Images Docker
 
-Cinq images publiées sur DockerHub :
+Cinq images publiées sur GHCR (GitHub Container Registry) :
 
 | Image | Contexte de build |
 |---|---|
-| `mchekini/iard-client-frontend:1.0` | `iard-client/frontend` |
-| `mchekini/iard-client-backend:1.0` | `iard-client/backend` |
-| `mchekini/moteur-tarifaire:1.0` | `moteur-tarifaire` |
-| `mchekini/sinistre-treatment-frontend:1.0` | `sinistre-treatment/frontend` |
-| `mchekini/sinistre-treatment-backend:1.0` | `sinistre-treatment/backend` |
+| `ghcr.io/mchekini-check-consulting/iard-client-frontend:1.0` | `iard-client/frontend` |
+| `ghcr.io/mchekini-check-consulting/iard-client-backend:1.0` | `iard-client/backend` |
+| `ghcr.io/mchekini-check-consulting/moteur-tarifaire:1.0` | `moteur-tarifaire` |
+| `ghcr.io/mchekini-check-consulting/sinistre-treatment-frontend:1.0` | `sinistre-treatment/frontend` |
+| `ghcr.io/mchekini-check-consulting/sinistre-treatment-backend:1.0` | `sinistre-treatment/backend` |
 
 ### Build depuis un Mac (cible VM Linux)
 
@@ -29,9 +29,9 @@ Les images sont buildées avec `--platform linux/amd64` pour fonctionner sur la
 VM Linux même quand elles sont construites sur un Mac Apple Silicon (arm64) :
 
 ```bash
-docker login                      # compte mchekini
-./scripts/build-push.sh           # build linux/amd64 + push DockerHub
-./scripts/build-push.sh --no-push # build local uniquement
+docker login ghcr.io -u <user-github>  # mot de passe = PAT avec scope write:packages
+./scripts/build-push.sh                # build linux/amd64 + push GHCR
+./scripts/build-push.sh --no-push      # build local uniquement
 ```
 
 ## Déploiement sur la VM (`deploy/`)
@@ -71,18 +71,22 @@ docker compose up -d
 `.github/workflows/build-and-deploy.yml` : à chaque push sur `main` (ou
 manuellement via *workflow_dispatch*) :
 
-1. **build** — build en parallèle des 5 images (`linux/amd64`) et push sur DockerHub ;
-2. **deploy** — copie de `deploy/` sur la VM par SCP puis `docker compose pull && up -d` par SSH.
+1. **build** — build en parallèle des 5 images (`linux/amd64`) et push sur GHCR
+   (authentification via le `GITHUB_TOKEN` natif, aucun secret à configurer) ;
+2. **deploy** — copie de `deploy/` sur la VM par SCP puis `docker compose pull && up -d` par SSH
+   (le pull GHCR est authentifié avec le `GITHUB_TOKEN` du run).
 
 Secrets GitHub à configurer (*Settings → Secrets and variables → Actions*) :
 
 | Secret | Rôle |
 |---|---|
-| `DOCKERHUB_USERNAME` | Compte DockerHub (`mchekini`) |
-| `DOCKERHUB_TOKEN` | Access token DockerHub |
 | `VM_HOST` | IP de la VM |
 | `VM_USER` | Utilisateur SSH |
 | `VM_SSH_KEY` | Clé privée SSH |
+
+> Pour pouvoir faire un `docker compose pull` **manuel** sur la VM (hors pipeline),
+> soit rendre les packages GHCR publics (*Package settings → Change visibility*),
+> soit faire un `docker login ghcr.io` sur la VM avec un PAT `read:packages`.
 
 Le fichier `~/iard/.env` de la VM est créé au premier déploiement à partir de
 l'exemple puis **jamais écrasé** : les secrets applicatifs restent sur la VM.

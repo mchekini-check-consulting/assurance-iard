@@ -5,14 +5,14 @@
 # images arm64 inutilisables sur une VM amd64).
 #
 # Usage :
-#   ./scripts/build-push.sh            # build + push sur DockerHub
+#   ./scripts/build-push.sh            # build + push sur GHCR
 #   ./scripts/build-push.sh --no-push  # build local uniquement (chargé dans le démon)
 #
-# Prérequis : docker login (compte mchekini)
+# Prérequis : docker login ghcr.io -u <user-github> (mot de passe = PAT avec scope write:packages)
 
 set -euo pipefail
 
-REGISTRY_USER="mchekini"
+REGISTRY_USER="ghcr.io/mchekini-check-consulting"
 VERSION="1.0"
 PLATFORM="linux/amd64"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
