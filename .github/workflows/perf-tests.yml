@@ -1,0 +1,84 @@
+name: Tests de performance (Gatling)
+
+# Job manuel : à lancer depuis l'onglet Actions → "Run workflow".
+# Simule des utilisateurs (20 par défaut) sur les API iard-client de la VM :
+# inscription → login JWT → devis (création, complétion, tarification) →
+# consultations répétées. Le rapport HTML Gatling est publié en artefact.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "URL de la plateforme cible"
+        required: true
+        default: "http://187.77.175.250"
+      users:
+        description: "Nombre d'utilisateurs simulés"
+        required: true
+        default: "20"
+      ramp_sec:
+        description: "Durée de montée en charge (secondes)"
+        required: true
+        default: "20"
+
+jobs:
+  gatling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Lancer la simulation Gatling
+        run: |
+          mvn -B -f perf-tests/pom.xml gatling:test \
+            -DbaseUrl="${{ inputs.base_url }}" \
+            -Dusers="${{ inputs.users }}" \
+            -DrampSec="${{ inputs.ramp_sec }}"
+
+      - name: Résumé des résultats
+        if: always()
+        run: |
+          STATS=$(ls -d perf-tests/target/gatling/iardclientsimulation-*/js/stats.json 2>/dev/null | head -1)
+          if [ -z "$STATS" ]; then
+            echo "Aucun rapport généré." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "## Résultats Gatling — ${{ inputs.users }} utilisateurs sur ${{ inputs.base_url }}"
+            echo ""
+            echo "| Indicateur | Valeur |"
+            echo "|---|---|"
+            jq -r '.stats |
+              "| Requêtes totales | \(.numberOfRequests.total) |",
+              "| Succès / Échecs | \(.numberOfRequests.ok) / \(.numberOfRequests.ko) |",
+              "| Temps de réponse min | \(.minResponseTime.total) ms |",
+              "| Temps de réponse moyen | \(.meanResponseTime.total) ms |",
+              "| Médiane (p50) | \(.percentiles1.total) ms |",
+              "| p75 | \(.percentiles2.total) ms |",
+              "| p95 | \(.percentiles3.total) ms |",
+              "| p99 | \(.percentiles4.total) ms |",
+              "| Temps de réponse max | \(.maxResponseTime.total) ms |"' "$STATS"
+            echo ""
+            echo "### Détail par requête (moyenne)"
+            echo ""
+            echo "| Requête | Total | KO | Moyenne | p95 | Max |"
+            echo "|---|---|---|---|---|---|"
+            jq -r '.contents[] | .stats |
+              "| \(.name) | \(.numberOfRequests.total) | \(.numberOfRequests.ko) | \(.meanResponseTime.total) ms | \(.percentiles3.total) ms | \(.maxResponseTime.total) ms |"' "$STATS"
+            echo ""
+            echo "📊 Rapport HTML complet : artefact **gatling-report** ci-dessous."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publier le rapport HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gatling-report
+          path: perf-tests/target/gatling/
+          retention-days: 30
