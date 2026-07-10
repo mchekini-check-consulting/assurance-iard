@@ -83,6 +83,7 @@ Secrets GitHub à configurer (*Settings → Secrets and variables → Actions*) 
 | `VM_HOST` | IP de la VM |
 | `VM_USER` | Utilisateur SSH |
 | `VM_SSH_KEY` | Clé privée SSH |
+| `OPENAI_API_KEY` | (optionnel) Clé OpenAI pour GPT Vision / OCR KYC — injectée dans le `.env` de la VM à chaque déploiement |
 
 > Pour pouvoir faire un `docker compose pull` **manuel** sur la VM (hors pipeline),
 > soit rendre les packages GHCR publics (*Package settings → Change visibility*),

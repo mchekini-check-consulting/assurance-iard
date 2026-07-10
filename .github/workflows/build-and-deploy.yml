@@ -101,6 +101,14 @@ jobs:
               cp .env.example .env
               echo "ATTENTION : ~/iard/.env créé depuis l'exemple, renseigner les secrets."
             fi
+            # Le secret GitHub OPENAI_API_KEY (GPT Vision / OCR KYC) est la source
+            # de vérité : injecté dans le .env de la VM à chaque déploiement.
+            # Les autres variables (JWT_SECRET, KAFKA_EXTERNAL_HOST) restent gérées sur la VM.
+            if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then
+              grep -v '^OPENAI_API_KEY=' .env > .env.tmp || true
+              echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env.tmp
+              mv .env.tmp .env
+            fi
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose pull
             docker compose up -d --remove-orphans
