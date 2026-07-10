@@ -170,6 +170,11 @@ import { Formule } from '../../core/models/devis.model';
                       prélèvement de votre prime mensuelle.
                     </p>
                   }
+                  @if (contrat()!.statut === 'ACTIF') {
+                    <a [routerLink]="['/contrat', contrat()!.id, 'modifier']" class="btn-secondary">
+                      ⚙️ Modifier mes garanties
+                    </a>
+                  }
                   <a routerLink="/dashboard/contrats" class="btn-secondary">
                     Voir tous mes contrats
                   </a>
@@ -496,6 +501,10 @@ import { Formule } from '../../core/models/devis.model';
       color: #92400e;
       font-size: 0.85rem;
       line-height: 1.5;
+    }
+
+    .btn-secondary + .btn-secondary {
+      margin-top: 0.75rem;
     }
 
     .btn-secondary {

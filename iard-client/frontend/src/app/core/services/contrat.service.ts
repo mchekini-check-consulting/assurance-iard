@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Contrat, SignatureRequest, ContratStats, StatutContrat } from '../models/contrat.model';
+import { AvenantRequest, Devis } from '../models/devis.model';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +30,11 @@ export class ContratService {
   signerContrat(id: number, code: string): Observable<Contrat> {
     const request: SignatureRequest = { code };
     return this.http.post<Contrat>(`${this.API_URL}/${id}/signer`, request);
+  }
+
+  // Selfcare : modification des garanties d'un contrat actif → devis d'avenant
+  creerAvenant(id: number, request: AvenantRequest): Observable<Devis> {
+    return this.http.post<Devis>(`${this.API_URL}/${id}/avenant`, request);
   }
 
   getPdfUrl(id: number): string {

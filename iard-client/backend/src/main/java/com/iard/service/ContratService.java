@@ -159,6 +159,20 @@ public class ContratService {
         contrat.setStatut(StatutContrat.ACTIF);
         contrat.setProchaineDatePrelevement(LocalDate.now().plusMonths(1));
 
+        // Avenant selfcare : le nouveau contrat remplace le contrat d'origine,
+        // qui est résilié à la signature
+        if (devis.getContratOrigineId() != null) {
+            String nouveauNumero = contrat.getNumeroContrat();
+            contratRepository.findByIdAndUserId(devis.getContratOrigineId(), userId)
+                    .filter(origine -> origine.getStatut() != StatutContrat.RESILIE)
+                    .ifPresent(origine -> {
+                        origine.setStatut(StatutContrat.RESILIE);
+                        contratRepository.save(origine);
+                        log.info("Contrat {} résilié : remplacé par le contrat {} (avenant)",
+                                origine.getNumeroContrat(), nouveauNumero);
+                    });
+        }
+
         // Régénérer le PDF avec la signature
         try {
             String pdfPath = pdfService.regenererPdfSigne(contrat, user, devis);

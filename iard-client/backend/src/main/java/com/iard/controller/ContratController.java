@@ -1,10 +1,13 @@
 package com.iard.controller;
 
+import com.iard.dto.AvenantRequest;
 import com.iard.dto.ContratResponse;
+import com.iard.dto.DevisResponse;
 import com.iard.dto.SignatureRequest;
 import com.iard.entity.StatutContrat;
 import com.iard.security.UserDetailsImpl;
 import com.iard.service.ContratService;
+import com.iard.service.DevisService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -21,6 +24,7 @@ import java.util.Map;
 public class ContratController {
 
     private final ContratService contratService;
+    private final DevisService devisService;
 
     /**
      * Génère un contrat à partir d'un devis.
@@ -60,6 +64,20 @@ public class ContratController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         ContratResponse response = contratService.getContrat(id, userDetails.getUser().getId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Modifie les garanties d'un contrat actif (selfcare) : crée un devis
+     * d'avenant tarifé, à souscrire et signer via le parcours habituel.
+     * À la signature du nouveau contrat, le contrat d'origine est résilié.
+     */
+    @PostMapping("/{id}/avenant")
+    public ResponseEntity<DevisResponse> creerAvenant(
+            @PathVariable Long id,
+            @RequestBody AvenantRequest request,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        DevisResponse response = devisService.creerDevisAvenant(id, userDetails.getUser().getId(), request);
         return ResponseEntity.ok(response);
     }
 

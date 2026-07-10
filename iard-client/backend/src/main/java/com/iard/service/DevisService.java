@@ -1,24 +1,30 @@
 package com.iard.service;
 
+import com.iard.dto.AvenantRequest;
 import com.iard.dto.DevisRequest;
 import com.iard.dto.DevisResponse;
 import com.iard.dto.TarificationRequest;
 import com.iard.entity.*;
+import com.iard.repository.ContratRepository;
 import com.iard.repository.DevisRepository;
 import com.iard.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DevisService {
 
     private final DevisRepository devisRepository;
     private final UserRepository userRepository;
+    private final ContratRepository contratRepository;
     private final TarificationService tarificationService;
 
     @Transactional
@@ -88,37 +94,61 @@ public class DevisService {
             throw new IllegalArgumentException("Données du devis incomplètes");
         }
 
-        // Construire la requête de tarification
-        TarificationRequest tarifRequest = TarificationRequest.builder()
-                .typeBien(donnees.getTypeBien())
-                .typeResidence(donnees.getTypeResidence())
-                .codePostal(donnees.getCodePostal())
-                .surfaceHabitable(donnees.getSurfaceHabitable())
-                .nombrePieces(donnees.getNombrePieces())
-                .etage(donnees.getEtage())
-                .anneeConstruction(donnees.getAnneeConstruction())
-                .statutOccupation(donnees.getStatutOccupation())
-                .alarme(donnees.getAlarme())
-                .porteBlindee(donnees.getPorteBlindee())
-                .dependances(donnees.getDependances())
-                .surfaceDependances(donnees.getSurfaceDependances())
-                .piscine(donnees.getPiscine())
-                .capitalMobilier(donnees.getCapitalMobilier())
-                .objetsValeur(donnees.getObjetsValeur())
-                .valeurObjetsValeur(donnees.getValeurObjetsValeur())
-                .nombreSinistres36Mois(donnees.getNombreSinistres36Mois())
-                .formule(donnees.getFormule())
-                .optionsGaranties(donnees.getOptionsGaranties())
-                .build();
-
         // Appeler le service de tarification
-        ResultatTarification resultat = tarificationService.calculerTarif(tarifRequest);
+        ResultatTarification resultat = tarificationService.calculerTarif(buildTarificationRequest(donnees));
 
         // Mettre à jour le devis
         devis.setResultatTarif(resultat);
         devis.setStatut(StatutDevis.DEVIS);
 
         devis = devisRepository.save(devis);
+        return toResponse(devis);
+    }
+
+    /**
+     * Crée un devis d'avenant à partir d'un contrat actif (selfcare) :
+     * les données du risque sont reprises du contrat d'origine, les garanties
+     * modifiées sont appliquées, et le tarif est recalculé immédiatement.
+     * La signature du contrat issu de ce devis résiliera le contrat d'origine.
+     */
+    @Transactional
+    public DevisResponse creerDevisAvenant(Long contratId, Long userId, AvenantRequest request) {
+        Contrat contrat = contratRepository.findByIdAndUserId(contratId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Contrat non trouvé"));
+
+        if (contrat.getStatut() != StatutContrat.ACTIF) {
+            throw new IllegalStateException("Seul un contrat actif peut être modifié");
+        }
+
+        DonneesRisqueHabitation origine = contrat.getDevis().getDonneesRisque();
+        if (origine == null) {
+            throw new IllegalStateException("Données du risque introuvables pour ce contrat");
+        }
+
+        // Copie des données du risque, puis application des modifications
+        DonneesRisqueHabitation donnees = copierDonneesRisque(origine);
+        appliquerModifications(donnees, request);
+
+        if (donnees.getFormule() == null) {
+            throw new IllegalArgumentException("La formule est obligatoire");
+        }
+
+        ResultatTarification resultat = tarificationService.calculerTarif(buildTarificationRequest(donnees));
+
+        Devis devis = Devis.builder()
+                .user(contrat.getUser())
+                .produit(contrat.getProduit())
+                .statut(StatutDevis.DEVIS)
+                .donneesRisque(donnees)
+                .assure(contrat.getAssure())
+                .resultatTarif(resultat)
+                .contratOrigineId(contrat.getId())
+                .build();
+
+        devis = devisRepository.save(devis);
+        log.info("Devis d'avenant {} créé pour le contrat {} (utilisateur {})",
+                devis.getId(), contrat.getNumeroContrat(), userId);
+
         return toResponse(devis);
     }
 
@@ -152,6 +182,70 @@ public class DevisService {
     @Transactional(readOnly = true)
     public long compterDevisTermines(Long userId) {
         return devisRepository.countByUserIdAndStatut(userId, StatutDevis.DEVIS);
+    }
+
+    private TarificationRequest buildTarificationRequest(DonneesRisqueHabitation donnees) {
+        return TarificationRequest.builder()
+                .typeBien(donnees.getTypeBien())
+                .typeResidence(donnees.getTypeResidence())
+                .codePostal(donnees.getCodePostal())
+                .surfaceHabitable(donnees.getSurfaceHabitable())
+                .nombrePieces(donnees.getNombrePieces())
+                .etage(donnees.getEtage())
+                .anneeConstruction(donnees.getAnneeConstruction())
+                .statutOccupation(donnees.getStatutOccupation())
+                .alarme(donnees.getAlarme())
+                .porteBlindee(donnees.getPorteBlindee())
+                .dependances(donnees.getDependances())
+                .surfaceDependances(donnees.getSurfaceDependances())
+                .piscine(donnees.getPiscine())
+                .capitalMobilier(donnees.getCapitalMobilier())
+                .objetsValeur(donnees.getObjetsValeur())
+                .valeurObjetsValeur(donnees.getValeurObjetsValeur())
+                .nombreSinistres36Mois(donnees.getNombreSinistres36Mois())
+                .formule(donnees.getFormule())
+                .optionsGaranties(donnees.getOptionsGaranties())
+                .build();
+    }
+
+    private DonneesRisqueHabitation copierDonneesRisque(DonneesRisqueHabitation origine) {
+        return DonneesRisqueHabitation.builder()
+                .typeBien(origine.getTypeBien())
+                .typeResidence(origine.getTypeResidence())
+                .adresse(origine.getAdresse())
+                .codePostal(origine.getCodePostal())
+                .ville(origine.getVille())
+                .surfaceHabitable(origine.getSurfaceHabitable())
+                .nombrePieces(origine.getNombrePieces())
+                .etage(origine.getEtage())
+                .anneeConstruction(origine.getAnneeConstruction())
+                .statutOccupation(origine.getStatutOccupation())
+                .alarme(origine.getAlarme())
+                .porteBlindee(origine.getPorteBlindee())
+                .dependances(origine.getDependances())
+                .surfaceDependances(origine.getSurfaceDependances())
+                .piscine(origine.getPiscine())
+                .capitalMobilier(origine.getCapitalMobilier())
+                .objetsValeur(origine.getObjetsValeur())
+                .valeurObjetsValeur(origine.getValeurObjetsValeur())
+                .nombreSinistres36Mois(origine.getNombreSinistres36Mois())
+                .formule(origine.getFormule())
+                .optionsGaranties(origine.getOptionsGaranties() != null
+                        ? new ArrayList<>(origine.getOptionsGaranties()) : null)
+                .build();
+    }
+
+    private void appliquerModifications(DonneesRisqueHabitation donnees, AvenantRequest request) {
+        if (request.getFormule() != null) donnees.setFormule(request.getFormule());
+        if (request.getOptionsGaranties() != null) donnees.setOptionsGaranties(request.getOptionsGaranties());
+        if (request.getAlarme() != null) donnees.setAlarme(request.getAlarme());
+        if (request.getPorteBlindee() != null) donnees.setPorteBlindee(request.getPorteBlindee());
+        if (request.getDependances() != null) donnees.setDependances(request.getDependances());
+        if (request.getSurfaceDependances() != null) donnees.setSurfaceDependances(request.getSurfaceDependances());
+        if (request.getPiscine() != null) donnees.setPiscine(request.getPiscine());
+        if (request.getCapitalMobilier() != null) donnees.setCapitalMobilier(request.getCapitalMobilier());
+        if (request.getObjetsValeur() != null) donnees.setObjetsValeur(request.getObjetsValeur());
+        if (request.getValeurObjetsValeur() != null) donnees.setValeurObjetsValeur(request.getValeurObjetsValeur());
     }
 
     private void updateDonneesRisque(DonneesRisqueHabitation donnees, DevisRequest request) {
@@ -198,6 +292,7 @@ public class DevisService {
                 .donneesRisque(devis.getDonneesRisque())
                 .assure(devis.getAssure())
                 .resultatTarif(devis.getResultatTarif())
+                .contratOrigineId(devis.getContratOrigineId())
                 .createdAt(devis.getCreatedAt())
                 .updatedAt(devis.getUpdatedAt());
 

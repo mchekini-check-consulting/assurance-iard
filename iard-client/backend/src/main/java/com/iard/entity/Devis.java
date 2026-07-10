@@ -52,6 +52,12 @@ public class Devis {
     @Column(name = "resultat_tarif", columnDefinition = "jsonb")
     private ResultatTarification resultatTarif;
 
+    // Renseigné pour un devis d'avenant selfcare : id du contrat dont les
+    // garanties sont modifiées. À la signature du nouveau contrat, le contrat
+    // d'origine est résilié (remplacé).
+    @Column(name = "contrat_origine_id")
+    private Long contratOrigineId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

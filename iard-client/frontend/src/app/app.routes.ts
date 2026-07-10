@@ -41,6 +41,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'contrat/:id/modifier',
+    loadComponent: () => import('./features/contrat/modifier-garanties.component').then(m => m.ModifierGarantiesComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'kyc',
     loadComponent: () => import('./features/kyc/kyc-verification.component').then(m => m.KycVerificationComponent),
     canActivate: [authGuard]

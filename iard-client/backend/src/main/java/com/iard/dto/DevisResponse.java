@@ -21,6 +21,7 @@ public class DevisResponse {
     private DonneesRisqueHabitation donneesRisque;
     private PersonneAssuree assure;
     private ResultatTarification resultatTarif;
+    private Long contratOrigineId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

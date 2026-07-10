@@ -98,11 +98,26 @@ export interface Devis {
   donneesRisque?: DonneesRisqueHabitation;
   assure?: PersonneAssuree;
   resultatTarif?: ResultatTarification;
+  contratOrigineId?: number;
   createdAt: string;
   updatedAt: string;
   adresseResume?: string;
   formuleResume?: string;
   primeTTCResume?: string;
+}
+
+// Modification des garanties d'un contrat actif (selfcare)
+export interface AvenantRequest {
+  formule?: Formule;
+  optionsGaranties?: string[];
+  alarme?: boolean;
+  porteBlindee?: boolean;
+  dependances?: boolean;
+  surfaceDependances?: number;
+  piscine?: boolean;
+  capitalMobilier?: number;
+  objetsValeur?: boolean;
+  valeurObjetsValeur?: number;
 }
 
 export interface DevisRequest {
