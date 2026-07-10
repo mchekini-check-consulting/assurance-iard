@@ -1,0 +1,162 @@
+========================================================================
+EXERCICE SQL — BASE iard_db (lecture seule)
+Connexion : jdbc:postgresql://187.77.175.250:5432/iard_db
+Utilisateur : iard_user / Mot de passe : iard_password
+========================================================================
+
+------------------------------------------------------------------------
+NIVEAU FACILE
+------------------------------------------------------------------------
+
+-- 1. Combien y a-t-il de contrats en base ?
+SELECT count(*) FROM contrats;
+
+-- 2. Email, nom et prénom des 10 derniers utilisateurs inscrits
+SELECT email, nom, prenom
+FROM users
+ORDER BY created_at DESC
+LIMIT 10;
+
+-- 3. Numéro et prime TTC des contrats PREMIUM > 500 €, du plus cher au moins cher
+SELECT numero_contrat, prime_ttc
+FROM contrats
+WHERE formule = 'PREMIUM' AND prime_ttc > 500
+ORDER BY prime_ttc DESC;
+
+-- 4. Les différents statuts présents dans la table contrats
+SELECT DISTINCT statut FROM contrats;
+
+-- 5. Nombre de devis pour chaque statut
+SELECT statut, count(*)
+FROM devis
+GROUP BY statut;
+
+-- 6. Nombre de contrats signés aujourd'hui
+SELECT count(*)
+FROM contrats
+WHERE date_signature::date = CURRENT_DATE;
+
+-- 7. Prime TTC min, max et moyenne (arrondie) des contrats ACTIF
+SELECT min(prime_ttc), max(prime_ttc), round(avg(prime_ttc), 2)
+FROM contrats
+WHERE statut = 'ACTIF';
+
+-- 8. Nombre d'utilisateurs avec un email de test (@perf.iard.test)
+SELECT count(*)
+FROM users
+WHERE email LIKE '%@perf.iard.test';
+
+------------------------------------------------------------------------
+NIVEAU INTERMÉDIAIRE
+------------------------------------------------------------------------
+
+-- 9. Top 10 des utilisateurs qui possèdent le plus de contrats
+SELECT u.email, count(*) AS nb_contrats
+FROM contrats c
+JOIN users u ON u.id = c.user_id
+GROUP BY u.email
+ORDER BY nb_contrats DESC
+LIMIT 10;
+
+-- 10. Par formule : nombre de contrats, prime TTC totale et moyenne
+SELECT formule,
+       count(*)                 AS nb_contrats,
+       sum(prime_ttc)           AS prime_totale,
+       round(avg(prime_ttc), 2) AS prime_moyenne
+FROM contrats
+GROUP BY formule;
+
+-- 11. Utilisateurs sans aucun contrat (variante LEFT JOIN)
+SELECT u.email
+FROM users u
+LEFT JOIN contrats c ON c.user_id = u.id
+WHERE c.id IS NULL;
+
+-- 11 bis. Utilisateurs sans aucun contrat (variante NOT EXISTS)
+SELECT u.email
+FROM users u
+WHERE NOT EXISTS (SELECT 1 FROM contrats c WHERE c.user_id = u.id);
+
+-- 12. Par période : prélèvements réussis, échecs et montant encaissé
+SELECT periode,
+       count(*) FILTER (WHERE statut = 'SUCCES') AS nb_succes,
+       count(*) FILTER (WHERE statut = 'FAILED') AS nb_echecs,
+       coalesce(sum(montant) FILTER (WHERE statut = 'SUCCES'), 0) AS total_encaisse
+FROM paiements
+GROUP BY periode
+ORDER BY periode;
+
+-- 13. Nombre de contrats par type de bien (JSONB devis.donnees_risque)
+SELECT d.donnees_risque->>'typeBien' AS type_bien, count(*)
+FROM contrats c
+JOIN devis d ON d.id = c.devis_id
+GROUP BY type_bien;
+
+-- 14. Utilisateurs détenant des contrats d'au moins 2 formules différentes
+SELECT u.email, count(DISTINCT c.formule) AS nb_formules
+FROM contrats c
+JOIN users u ON u.id = c.user_id
+GROUP BY u.email
+HAVING count(DISTINCT c.formule) >= 2;
+
+-- 15. Prélèvements en échec : email du client, numéro de contrat, montant
+SELECT u.email, c.numero_contrat, p.montant
+FROM paiements p
+JOIN contrats c ON c.id = p.contrat_id
+JOIN users u    ON u.id = c.user_id
+WHERE p.statut = 'FAILED';
+
+-- 16. Surface habitable moyenne des biens assurés, par formule (JSONB + cast)
+SELECT c.formule,
+       round(avg((d.donnees_risque->>'surfaceHabitable')::int), 1) AS surface_moyenne
+FROM contrats c
+JOIN devis d ON d.id = c.devis_id
+GROUP BY c.formule;
+
+------------------------------------------------------------------------
+NIVEAU DIFFICILE
+------------------------------------------------------------------------
+
+-- 17. Top 3 des contrats les plus chers de chaque formule (fonction fenêtre)
+SELECT numero_contrat, formule, prime_ttc, rang
+FROM (
+    SELECT numero_contrat, formule, prime_ttc,
+           ROW_NUMBER() OVER (PARTITION BY formule ORDER BY prime_ttc DESC) AS rang
+    FROM contrats
+) t
+WHERE rang <= 3
+ORDER BY formule, rang;
+
+-- 18. Moyenne du nombre de garanties incluses par formule (JSONB array)
+SELECT formule,
+       round(avg(nb_garanties), 2) AS moyenne_garanties_incluses
+FROM (
+    SELECT formule,
+           jsonb_array_length(garanties->'garantiesIncluses') AS nb_garanties
+    FROM contrats
+    WHERE statut = 'ACTIF'
+) t
+GROUP BY formule;
+
+-- 19. Évolution cumulée du nombre de contrats créés jour par jour
+SELECT jour,
+       nb_crees,
+       sum(nb_crees) OVER (ORDER BY jour) AS cumul
+FROM (
+    SELECT created_at::date AS jour, count(*) AS nb_crees
+    FROM contrats
+    GROUP BY created_at::date
+) t
+ORDER BY jour;
+
+-- 20. Les 10 contrats les plus au-dessus de la prime moyenne de leur formule
+SELECT numero_contrat, formule, prime_ttc,
+       round(moyenne_formule, 2) AS moyenne_formule,
+       round(prime_ttc - moyenne_formule, 2) AS ecart
+FROM (
+    SELECT numero_contrat, formule, prime_ttc,
+           AVG(prime_ttc) OVER (PARTITION BY formule) AS moyenne_formule
+    FROM contrats
+) t
+ORDER BY ecart DESC
+LIMIT 10;
