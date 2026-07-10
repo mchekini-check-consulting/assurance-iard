@@ -1,0 +1,194 @@
+# Compose de DÉPLOIEMENT (VM Linux) : utilise les images publiées sur DockerHub.
+#
+# Points d'entrée HTTP (via le reverse proxy) :
+#   http://VM:80    espace client
+#   http://VM:81    gestion des sinistres
+#   http://VM:8081  moteur tarifaire (API)
+#   http://VM:8085  Kafka UI
+#
+# Pour la formation, les infrastructures sont aussi exposées directement :
+#   PostgreSQL iard_db      → VM:5432
+#   PostgreSQL sinistre_db  → VM:5433
+#   Kafka                   → VM:9092 (renseigner KAFKA_EXTERNAL_HOST=<IP de la VM> dans .env)
+#
+# Secrets / variables attendues dans un fichier .env à côté de ce compose :
+#   OPENAI_API_KEY, JWT_SECRET, KAFKA_EXTERNAL_HOST
+
+services:
+  # ------------------------------------------------------------------
+  # Reverse proxy : seul point d'entrée HTTP des applications
+  # ------------------------------------------------------------------
+  reverse-proxy:
+    image: nginx:alpine
+    container_name: iard-reverse-proxy
+    ports:
+      - "80:80"
+      - "81:81"
+      - "8081:8081"
+    volumes:
+      - ./nginx/reverse-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - iard-client-frontend
+      - sinistre-frontend
+      - moteur-tarifaire
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # Bases de données (exposées à l'extérieur pour la formation)
+  # ------------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: iard-postgres
+    environment:
+      POSTGRES_DB: iard_db
+      POSTGRES_USER: iard_user
+      POSTGRES_PASSWORD: iard_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iard_user -d iard_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  postgres-sinistre-treatment:
+    image: postgres:16
+    container_name: iard-postgres-sinistre-treatment
+    environment:
+      POSTGRES_DB: sinistre_db
+      POSTGRES_USER: sinistre_user
+      POSTGRES_PASSWORD: sinistre_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_sinistre_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sinistre_user -d sinistre_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # Kafka (KRaft) — exposé à l'extérieur pour la formation.
+  # KAFKA_EXTERNAL_HOST doit contenir l'IP publique de la VM pour que
+  # les clients externes puissent s'y connecter (défaut : localhost).
+  # ------------------------------------------------------------------
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: iard-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: iard-kafka-ui
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: iard
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # iard-client : application dédiée au client (front + back)
+  # ------------------------------------------------------------------
+  iard-client-backend:
+    image: mchekini/iard-client-backend:1.0
+    container_name: iard-client-backend
+    environment:
+      IARD_DB_HOST: postgres
+      IARD_DB_PORT: 5432
+      IARD_DB_NAME: iard_db
+      IARD_DB_USER: iard_user
+      IARD_DB_PASSWORD: iard_password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      SINISTRE_UPLOAD_DIR: /data/uploads
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-iard-secret-key-very-long-and-secure-at-least-256-bits-for-hs256-algorithm}
+    volumes:
+      - uploads_data:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  iard-client-frontend:
+    image: mchekini/iard-client-frontend:1.0
+    container_name: iard-client-frontend
+    depends_on:
+      - iard-client-backend
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # Moteur tarifaire
+  # ------------------------------------------------------------------
+  moteur-tarifaire:
+    image: mchekini/moteur-tarifaire:1.0
+    container_name: iard-moteur-tarifaire
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # sinistre-treatment : application de gestion des sinistres (front + back)
+  # ------------------------------------------------------------------
+  sinistre-backend:
+    image: mchekini/sinistre-treatment-backend:1.0
+    container_name: iard-sinistre-backend
+    environment:
+      SINISTRE_DB_HOST: postgres-sinistre-treatment
+      SINISTRE_DB_PORT: 5432
+      SINISTRE_DB_NAME: sinistre_db
+      SINISTRE_DB_USER: sinistre_user
+      SINISTRE_DB_PASSWORD: sinistre_password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+    depends_on:
+      postgres-sinistre-treatment:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  sinistre-frontend:
+    image: mchekini/sinistre-treatment-frontend:1.0
+    container_name: iard-sinistre-frontend
+    depends_on:
+      - sinistre-backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  postgres_sinistre_data:
+  kafka_data:
+  uploads_data:

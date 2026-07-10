@@ -1,0 +1,155 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <a routerLink="/" class="logo">
+        <span class="logo-icon">🛡️</span>
+        <span class="logo-text">IARD Assurances</span>
+      </a>
+      <h1>Créer un compte</h1>
+      <p>Rejoignez-nous et gérez vos assurances</p>
+    </div>
+
+    @if (errorMessage) {
+      <div class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="civilite">Civilité</label>
+        <select
+          id="civilite"
+          formControlName="civilite"
+          [class.error]="civilite?.invalid && civilite?.touched"
+        >
+          <option value="">Sélectionnez</option>
+          @for (c of civilites; track c) {
+            <option [value]="c">{{ getCiviliteLabel(c) }}</option>
+          }
+        </select>
+        @if (civilite?.invalid && civilite?.touched) {
+          <span class="error-message">La civilité est obligatoire</span>
+        }
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="prenom">Prénom</label>
+          <input
+            type="text"
+            id="prenom"
+            formControlName="prenom"
+            placeholder="Votre prénom"
+            [class.error]="prenom?.invalid && prenom?.touched"
+          >
+          @if (prenom?.invalid && prenom?.touched) {
+            <span class="error-message">
+              @if (prenom?.errors?.['required']) { Le prénom est obligatoire }
+              @if (prenom?.errors?.['minlength']) { Minimum 2 caractères }
+            </span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="nom">Nom</label>
+          <input
+            type="text"
+            id="nom"
+            formControlName="nom"
+            placeholder="Votre nom"
+            [class.error]="nom?.invalid && nom?.touched"
+          >
+          @if (nom?.invalid && nom?.touched) {
+            <span class="error-message">
+              @if (nom?.errors?.['required']) { Le nom est obligatoire }
+              @if (nom?.errors?.['minlength']) { Minimum 2 caractères }
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="votre@email.com"
+          [class.error]="email?.invalid && email?.touched"
+        >
+        @if (email?.invalid && email?.touched) {
+          <span class="error-message">
+            @if (email?.errors?.['required']) { L'email est obligatoire }
+            @if (email?.errors?.['email']) { L'email n'est pas valide }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          placeholder="Votre mot de passe"
+          [class.error]="password?.invalid && password?.touched"
+        >
+        @if (password?.invalid && password?.touched) {
+          <span class="error-message">
+            @if (password?.errors?.['required']) { Le mot de passe est obligatoire }
+            @else if (password?.errors?.['minlength']) { Minimum 8 caractères }
+            @else if (password?.errors?.['passwordStrength']) {
+              Doit contenir majuscule, minuscule, chiffre et caractère spécial (@$!%*?&)
+            }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirmer le mot de passe</label>
+        <input
+          type="password"
+          id="confirmPassword"
+          formControlName="confirmPassword"
+          placeholder="Confirmez votre mot de passe"
+          [class.error]="confirmPassword?.invalid && confirmPassword?.touched"
+        >
+        @if (confirmPassword?.invalid && confirmPassword?.touched) {
+          <span class="error-message">
+            @if (confirmPassword?.errors?.['required']) { La confirmation est obligatoire }
+            @if (confirmPassword?.errors?.['passwordMismatch']) { Les mots de passe ne correspondent pas }
+          </span>
+        }
+      </div>
+
+      <div class="form-check">
+        <input
+          type="checkbox"
+          id="acceptCgu"
+          formControlName="acceptCgu"
+        >
+        <label for="acceptCgu">
+          J'accepte les <a href="#">CGU</a> et la <a href="#">Politique de confidentialité</a>
+        </label>
+      </div>
+      @if (acceptCgu?.invalid && acceptCgu?.touched) {
+        <span class="error-message" style="margin-top: -1rem; margin-bottom: 1rem; display: block;">
+          Vous devez accepter les CGU
+        </span>
+      }
+
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="isLoading">
+        @if (isLoading) {
+          Création en cours...
+        } @else {
+          Créer mon compte
+        }
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>Déjà un compte ? <a routerLink="/login">Se connecter</a></p>
+    </div>
+  </div>
+</div>

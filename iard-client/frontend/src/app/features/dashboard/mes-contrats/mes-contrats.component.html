@@ -1,0 +1,107 @@
+<div class="mes-contrats">
+  <div class="page-header">
+    <div>
+      <h1>Mes contrats</h1>
+      <p>Consultez vos contrats en cours et leur statut</p>
+    </div>
+    <a routerLink="/devis" class="btn btn-primary">
+      + Nouveau devis
+    </a>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filters">
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'all'"
+      (click)="setFilter('all')"
+    >
+      Tous
+    </button>
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'en_attente'"
+      (click)="setFilter('en_attente')"
+    >
+      En attente
+    </button>
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'actif'"
+      (click)="setFilter('actif')"
+    >
+      Actifs
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else if (filteredContrats.length === 0) {
+    <div class="empty-state">
+      <span class="empty-icon">📄</span>
+      <h2>Aucun contrat</h2>
+      @if (filter() === 'all') {
+        <p>Vous n'avez pas encore de contrat. Finalisez un devis pour obtenir votre premier contrat !</p>
+      } @else if (filter() === 'en_attente') {
+        <p>Vous n'avez pas de contrat en attente de signature.</p>
+      } @else {
+        <p>Vous n'avez pas de contrat actif.</p>
+      }
+      <a routerLink="/dashboard/devis" class="btn btn-primary">
+        Voir mes devis
+      </a>
+    </div>
+  } @else {
+    <div class="contrats-list">
+      @for (c of filteredContrats; track c.id) {
+        <a [routerLink]="['/contrat', c.id]" class="contrat-card">
+          <div class="contrat-header">
+            <span class="contrat-ref">{{ c.numeroContrat }}</span>
+            <span class="badge" [ngClass]="getStatutClass(c.statut)">
+              {{ getStatutLabel(c.statut) }}
+            </span>
+          </div>
+
+          <div class="contrat-body">
+            <div class="contrat-product">
+              <span class="product-icon">🏠</span>
+              <span class="product-name">Assurance Habitation</span>
+            </div>
+
+            <p class="contrat-address">
+              {{ c.donneesRisque.adresse }}, {{ c.donneesRisque.codePostal }} {{ c.donneesRisque.ville }}
+            </p>
+
+            <p class="contrat-formule">Formule {{ getFormuleLabel(c.formule) }}</p>
+
+            <div class="contrat-price">
+              <span class="price-value">{{ c.primeTTC | number:'1.2-2' }} €</span>
+              <span class="price-period">/an</span>
+            </div>
+          </div>
+
+          <div class="contrat-footer">
+            <span class="contrat-date">
+              @if (c.statut === 'ACTIF' && c.dateSignature) {
+                Signé le {{ formatDate(c.dateSignature) }}
+              } @else {
+                Créé le {{ formatDate(c.createdAt) }}
+              }
+            </span>
+
+            <div class="contrat-actions">
+              @if (c.statut === 'EN_ATTENTE') {
+                <span class="action-link action-sign">Signer maintenant →</span>
+              } @else {
+                <span class="action-link">Voir le détail →</span>
+              }
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,56 @@
+<div class="mes-sinistres">
+  <div class="page-header">
+    <div>
+      <h1>Mes sinistres</h1>
+      <p>Déclarez un sinistre et suivez l'instruction de vos dossiers</p>
+    </div>
+    <a routerLink="/dashboard/sinistres/declarer" class="btn btn-primary">
+      + Déclarer un sinistre
+    </a>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else if (sinistres().length === 0) {
+    <div class="empty-state">
+      <span class="empty-icon">🛡️</span>
+      <h2>Aucun sinistre déclaré</h2>
+      <p>Vous n'avez déclaré aucun sinistre. En cas de dommage sur votre logement assuré, déclarez-le ici.</p>
+      <a routerLink="/dashboard/sinistres/declarer" class="btn btn-primary">
+        Déclarer un sinistre
+      </a>
+    </div>
+  } @else {
+    <div class="sinistres-list">
+      @for (s of sinistres(); track s.id) {
+        <a [routerLink]="['/dashboard/sinistres', s.id]" class="sinistre-card">
+          <div class="sinistre-header">
+            <span class="sinistre-ref">{{ s.numeroSinistre }}</span>
+            <span class="badge" [ngClass]="getStatutClass(s.statut)">
+              {{ getStatutLabel(s.statut) }}
+            </span>
+          </div>
+
+          <div class="sinistre-body">
+            <div class="sinistre-type">
+              <span class="type-name">{{ getTypeLabel(s.type) }}</span>
+            </div>
+            <p class="sinistre-info">Contrat {{ s.numeroContrat }} — survenu le {{ s.dateSinistre | date:'dd/MM/yyyy' }}</p>
+            <p class="sinistre-lieu">{{ s.lieu }}</p>
+            @if (s.statut === 'APPROUVE' && s.montantRembourse != null) {
+              <p class="sinistre-remboursement">Remboursement pris en charge : {{ s.montantRembourse | number:'1.2-2' }} €</p>
+            }
+          </div>
+
+          <div class="sinistre-footer">
+            <span class="sinistre-date">Déclaré le {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            <span class="action-link">Voir le suivi →</span>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

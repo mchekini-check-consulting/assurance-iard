@@ -1,0 +1,372 @@
+// Design variables
+$accent: #6d3fd6;
+$accent-2: #5b7cf7;
+$accent-soft: #f3f0ff;
+$ink: #1e293b;
+$muted: #64748b;
+$line: #e2e8f0;
+$bg: #f8fafc;
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background: $bg;
+}
+
+// Sidebar
+.sidebar {
+  width: 268px;
+  flex: none;
+  background: #fff;
+  border-right: 1px solid $line;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  transition: transform 0.3s ease, width 0.3s ease;
+
+  @media (max-width: 768px) {
+    transform: translateX(-100%);
+
+    .sidebar-collapsed & {
+      transform: translateX(0);
+    }
+  }
+}
+
+.sidebar-collapsed .sidebar {
+  width: 80px;
+  padding: 22px 12px;
+
+  .logo-text,
+  .nav-label {
+    display: none;
+  }
+
+  .sidebar-header {
+    justify-content: center;
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .logout-btn {
+    justify-content: center;
+    padding: 11px;
+
+    .nav-label {
+      display: none;
+    }
+  }
+
+  .toggle-btn {
+    display: none;
+  }
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 24px;
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-decoration: none;
+
+    .logo-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, $accent, $accent-2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        display: flex;
+      }
+    }
+
+    .logo-text {
+      line-height: 1;
+
+      .logo-title {
+        display: block;
+        font-size: 17px;
+        font-weight: 800;
+        color: $ink;
+        letter-spacing: -0.2px;
+      }
+
+      .logo-subtitle {
+        display: block;
+        font-size: 9px;
+        font-weight: 600;
+        color: $muted;
+        letter-spacing: 2.5px;
+        margin-top: 3px;
+      }
+    }
+  }
+
+  .toggle-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid $line;
+    background: #fff;
+    border-radius: 8px;
+    color: $muted;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: $bg;
+      color: $ink;
+    }
+
+    svg {
+      display: flex;
+    }
+
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    border-radius: 11px;
+    color: $muted;
+    font-size: 14.5px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: $accent-soft;
+      color: $accent;
+
+      .nav-icon svg {
+        color: $accent;
+      }
+    }
+
+    &.active {
+      background: linear-gradient(135deg, $accent, $accent-2);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 8px 20px -8px $accent;
+
+      .nav-icon svg {
+        color: #fff;
+      }
+    }
+
+    .nav-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        display: flex;
+        transition: color 0.15s;
+      }
+    }
+
+    .nav-label {
+      white-space: nowrap;
+    }
+  }
+}
+
+.sidebar-footer {
+  border-top: 1px solid $line;
+  padding-top: 14px;
+  margin-top: 8px;
+
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    border-radius: 11px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: $muted;
+    font-size: 14.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #fef2f2;
+      color: #ef4444;
+
+      svg {
+        color: #ef4444;
+      }
+    }
+
+    svg {
+      display: flex;
+    }
+  }
+}
+
+// Main Content
+.main-content {
+  flex: 1;
+  margin-left: 268px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transition: margin-left 0.3s ease;
+
+  .sidebar-collapsed & {
+    margin-left: 80px;
+  }
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
+}
+
+.main-header {
+  height: 68px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 0 36px;
+  background: $bg;
+
+  .mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: $muted;
+    cursor: pointer;
+    padding: 8px;
+    margin-right: auto;
+
+    svg {
+      display: flex;
+    }
+
+    @media (max-width: 768px) {
+      display: flex;
+    }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .header-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid $line;
+    background: #fff;
+    color: $muted;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+
+    &:hover {
+      background: $bg;
+      color: $ink;
+    }
+
+    svg {
+      display: flex;
+    }
+
+    &.notification .notification-dot {
+      position: absolute;
+      top: 9px;
+      right: 10px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: $accent;
+      border: 2px solid $bg;
+    }
+  }
+
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, $accent, $accent-2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: $ink;
+
+      @media (max-width: 600px) {
+        display: none;
+      }
+    }
+
+    .chevron {
+      color: $muted;
+      display: flex;
+    }
+  }
+}
+
+.content-area {
+  flex: 1;
+  padding: 4px 36px 36px;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}

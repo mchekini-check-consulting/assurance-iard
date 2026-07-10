@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: iard-backend
+
+  datasource:
+    url: jdbc:postgresql://${IARD_DB_HOST:localhost}:${IARD_DB_PORT:5432}/${IARD_DB_NAME:iard_db}
+    username: ${IARD_DB_USER:iard_user}
+    password: ${IARD_DB_PASSWORD:iard_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 30MB
+
+# Stockage des pièces jointes de sinistres
+app:
+  sinistre:
+    upload-dir: ${SINISTRE_UPLOAD_DIR:./uploads/sinistres}
+
+jwt:
+  secret: ${JWT_SECRET:iard-secret-key-very-long-and-secure-at-least-256-bits-for-hs256-algorithm}
+  expiration: 86400000
+
+# Configuration OpenAI pour l'OCR des documents KYC
+# La clé est fournie exclusivement via la variable d'environnement OPENAI_API_KEY
+# (jamais en dur dans ce fichier ni dans l'image Docker). Si absente, l'OCR est désactivé.
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}
+  model: gpt-4o  # Modèle avec capacités vision
+
+# Logging configuration
+logging:
+  level:
+    com.iard.security: DEBUG
+    org.springframework.security: DEBUG

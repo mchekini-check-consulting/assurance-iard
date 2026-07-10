@@ -1,0 +1,167 @@
+# Compose de DÉVELOPPEMENT : build local des images.
+# Pour le déploiement sur VM (images DockerHub + reverse proxy), voir deploy/docker-compose.yml
+services:
+  postgres:
+    image: postgres:16
+    container_name: iard-postgres
+    environment:
+      POSTGRES_DB: iard_db
+      POSTGRES_USER: iard_user
+      POSTGRES_PASSWORD: iard_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iard_user -d iard_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Base de données dédiée à l'application sinistre-treatment (database-per-service)
+  postgres-sinistre-treatment:
+    image: postgres:16
+    container_name: iard-postgres-sinistre-treatment
+    environment:
+      POSTGRES_DB: sinistre_db
+      POSTGRES_USER: sinistre_user
+      POSTGRES_PASSWORD: sinistre_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_sinistre_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sinistre_user -d sinistre_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Kafka en mode KRaft (sans Zookeeper)
+  # - Listener EXTERNAL (localhost:9092) : pour les backends lancés sur la machine hôte
+  # - Listener PLAINTEXT (kafka:19092)   : pour les services du réseau docker (kafka-ui)
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: iard-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # Interface web de visualisation des topics / messages Kafka
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: iard-kafka-ui
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: iard
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # Applications
+  # Les secrets (OPENAI_API_KEY, JWT_SECRET) sont injectés à l'exécution
+  # depuis le fichier .env — jamais copiés dans les images.
+  # ------------------------------------------------------------------
+
+  iard-client-backend:
+    build: ./iard-client/backend
+    container_name: iard-client-backend
+    environment:
+      IARD_DB_HOST: postgres
+      IARD_DB_PORT: 5432
+      IARD_DB_NAME: iard_db
+      IARD_DB_USER: iard_user
+      IARD_DB_PASSWORD: iard_password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      SINISTRE_UPLOAD_DIR: /data/uploads
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-iard-secret-key-very-long-and-secure-at-least-256-bits-for-hs256-algorithm}
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads_data:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  moteur-tarifaire:
+    build: ./moteur-tarifaire
+    container_name: iard-moteur-tarifaire
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  sinistre-backend:
+    build: ./sinistre-treatment/backend
+    container_name: iard-sinistre-backend
+    environment:
+      SINISTRE_DB_HOST: postgres-sinistre-treatment
+      SINISTRE_DB_PORT: 5432   # port interne du conteneur (5433 n'est que le mapping hôte)
+      SINISTRE_DB_NAME: sinistre_db
+      SINISTRE_DB_USER: sinistre_user
+      SINISTRE_DB_PASSWORD: sinistre_password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres-sinistre-treatment:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Exposés sur 4200/4300 pour rester alignés avec les origines CORS des backends
+  iard-client-frontend:
+    build: ./iard-client/frontend
+    container_name: iard-client-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - iard-client-backend
+    restart: unless-stopped
+
+  sinistre-frontend:
+    build: ./sinistre-treatment/frontend
+    container_name: iard-sinistre-frontend
+    ports:
+      - "4300:80"
+    depends_on:
+      - sinistre-backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  postgres_sinistre_data:
+  kafka_data:
+  uploads_data:

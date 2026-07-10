@@ -1,0 +1,90 @@
+<div class="sinistre-detail">
+  <a routerLink="/dashboard/sinistres" class="back-link">← Retour à mes sinistres</a>
+
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else if (!sinistre()) {
+    <div class="empty-state">
+      <span class="empty-icon">❓</span>
+      <h2>Sinistre introuvable</h2>
+      <a routerLink="/dashboard/sinistres" class="btn btn-primary">Retour à mes sinistres</a>
+    </div>
+  } @else {
+    @if (sinistre(); as s) {
+      <div class="page-header">
+        <div>
+          <h1>{{ s.numeroSinistre }}</h1>
+          <p>{{ getTypeLabel(s.type) }} — contrat {{ s.numeroContrat }}</p>
+        </div>
+        <span class="badge" [ngClass]="getStatutClass(s.statut)">{{ getStatutLabel(s.statut) }}</span>
+      </div>
+
+      <!-- Résultat de la décision -->
+      @if (s.statut === 'APPROUVE') {
+        <div class="decision-banner approuve">
+          <strong>Sinistre approuvé.</strong>
+          Montant du remboursement pris en charge par l'assurance :
+          <strong>{{ s.montantRembourse | number:'1.2-2' }} €</strong>
+          @if (s.commentaireDecision) {
+            <p class="decision-comment">{{ s.commentaireDecision }}</p>
+          }
+        </div>
+      } @else if (s.statut === 'REJETE') {
+        <div class="decision-banner rejete">
+          <strong>Sinistre rejeté.</strong>
+          <p class="decision-comment">Motif : {{ s.commentaireDecision || 'Non précisé' }}</p>
+        </div>
+      }
+
+      <div class="cards-grid">
+        <!-- Timeline -->
+        <div class="card">
+          <h2>Suivi du dossier</h2>
+          <ul class="timeline">
+            @for (etape of s.timeline; track $index) {
+              <li>
+                <span class="dot" [ngClass]="getStatutClass(etape.statut)"></span>
+                <div class="timeline-content">
+                  <strong>{{ getStatutLabel(etape.statut) }}</strong>
+                  <span class="timeline-date">{{ etape.date | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+          @if (s.statut === 'DECLARE' || s.statut === 'EN_COURS_ANALYSE') {
+            <p class="timeline-hint">Votre dossier est en cours d'instruction par nos gestionnaires sinistres.</p>
+          }
+        </div>
+
+        <!-- Détails -->
+        <div class="card">
+          <h2>Détails de la déclaration</h2>
+          <dl>
+            <div><dt>Type</dt><dd>{{ getTypeLabel(s.type) }}</dd></div>
+            <div><dt>Date du sinistre</dt><dd>{{ s.dateSinistre | date:'dd/MM/yyyy' }}</dd></div>
+            <div><dt>Lieu</dt><dd>{{ s.lieu }}</dd></div>
+            <div><dt>Montant estimé</dt><dd>{{ s.montantEstime != null ? (s.montantEstime | number:'1.2-2') + ' €' : '—' }}</dd></div>
+            <div><dt>Déclaré le</dt><dd>{{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}</dd></div>
+          </dl>
+
+          <h3>Description</h3>
+          <p class="description">{{ s.description }}</p>
+
+          @if (s.piecesJointes.length > 0) {
+            <h3>Pièces jointes</h3>
+            <ul class="pieces-list">
+              @for (pj of s.piecesJointes; track pj.id) {
+                <li>
+                  <a [href]="getPieceJointeUrl(pj.id)" target="_blank">📎 {{ pj.nomFichier }}</a>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

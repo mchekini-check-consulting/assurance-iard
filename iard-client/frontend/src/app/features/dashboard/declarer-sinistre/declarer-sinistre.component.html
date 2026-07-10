@@ -1,0 +1,168 @@
+<div class="declarer-sinistre">
+  @if (sinistreDeclare(); as sinistre) {
+    <!-- Confirmation -->
+    <div class="confirmation">
+      <span class="confirmation-icon">✅</span>
+      <h1>Sinistre déclaré</h1>
+      <p>
+        Votre déclaration a bien été enregistrée sous le numéro
+        <strong class="numero">{{ sinistre.numeroSinistre }}</strong>.
+      </p>
+      <p class="confirmation-info">
+        Elle a été transmise à l'assureur pour instruction. Vous pouvez suivre l'avancement
+        de votre dossier depuis l'onglet Sinistres.
+      </p>
+      <div class="confirmation-actions">
+        <a [routerLink]="['/dashboard/sinistres', sinistre.id]" class="btn btn-primary">Suivre mon dossier</a>
+        <a routerLink="/dashboard/sinistres" class="btn btn-secondary">Retour à mes sinistres</a>
+      </div>
+    </div>
+  } @else {
+    <div class="page-header">
+      <div>
+        <h1>Déclarer un sinistre</h1>
+        <p>Assurance habitation — contrats actifs uniquement</p>
+      </div>
+      <a routerLink="/dashboard/sinistres" class="back-link">← Retour</a>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Chargement de vos contrats...</p>
+      </div>
+    } @else if (contrats().length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon">📄</span>
+        <h2>Aucun contrat éligible</h2>
+        <p>La déclaration d'un sinistre nécessite un contrat habitation actif.</p>
+        <a routerLink="/dashboard/contrats" class="btn btn-primary">Voir mes contrats</a>
+      </div>
+    } @else {
+      <form class="form-card" (ngSubmit)="soumettre()">
+        @if (errorMessage()) {
+          <div class="alert-error">{{ errorMessage() }}</div>
+        }
+
+        <!-- Contrat -->
+        <div class="form-group">
+          <label for="contrat">Contrat concerné *</label>
+          <select id="contrat" name="contrat" [(ngModel)]="contratId" (ngModelChange)="onContratChange()" required>
+            <option [ngValue]="null" disabled>Sélectionnez un contrat habitation actif</option>
+            @for (c of contrats(); track c.id) {
+              <option [ngValue]="c.id">
+                {{ c.numeroContrat }} — {{ c.donneesRisque.adresse }}, {{ c.donneesRisque.codePostal }} {{ c.donneesRisque.ville }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <!-- Type -->
+        <div class="form-group">
+          <label for="type">Type de sinistre *</label>
+          <select id="type" name="type" [(ngModel)]="type" required>
+            <option value="" disabled>Sélectionnez le type de sinistre</option>
+            @for (t of typesSinistre; track t) {
+              <option [value]="t">{{ typeLabels[t] }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Date -->
+        <div class="form-group">
+          <label for="dateSinistre">Date du sinistre *</label>
+          <input
+            id="dateSinistre"
+            name="dateSinistre"
+            type="date"
+            [(ngModel)]="dateSinistre"
+            [max]="today"
+            [min]="dateEffet"
+            required
+          >
+          @if (dateEffet) {
+            <span class="field-hint">Entre la date d'effet du contrat ({{ dateEffet }}) et aujourd'hui.</span>
+          }
+        </div>
+
+        <!-- Lieu -->
+        <div class="form-group">
+          <label for="lieu">Lieu du sinistre *</label>
+          <input
+            id="lieu"
+            name="lieu"
+            type="text"
+            [(ngModel)]="lieu"
+            placeholder="Adresse du logement assuré"
+            required
+          >
+          <span class="field-hint">Pré-rempli avec l'adresse du logement assuré, modifiable.</span>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="description">Description *</label>
+          <textarea
+            id="description"
+            name="description"
+            rows="5"
+            [(ngModel)]="description"
+            placeholder="Décrivez les circonstances et les dommages constatés (minimum 50 caractères)"
+            required
+          ></textarea>
+          <span class="field-hint" [class.hint-error]="description.length > 0 && !descriptionValide">
+            {{ description.trim().length }} / 50 caractères minimum
+          </span>
+        </div>
+
+        <!-- Montant estimé -->
+        <div class="form-group">
+          <label for="montant">Montant estimé des dommages (€)</label>
+          <input
+            id="montant"
+            name="montant"
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="montantEstime"
+            placeholder="Optionnel"
+          >
+        </div>
+
+        <!-- Pièces jointes -->
+        <div class="form-group">
+          <label for="fichiers">Pièces jointes</label>
+          <input
+            id="fichiers"
+            name="fichiers"
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.pdf"
+            (change)="onFichiersChange($event)"
+          >
+          <span class="field-hint">Photos / justificatifs — max 5 fichiers, jpg / png / pdf, 5 Mo par fichier.</span>
+          @if (fichiers.length > 0) {
+            <ul class="fichiers-list">
+              @for (f of fichiers; track f.name; let i = $index) {
+                <li>
+                  <span>📎 {{ f.name }} ({{ (f.size / 1024 / 1024) | number:'1.1-2' }} Mo)</span>
+                  <button type="button" class="remove-btn" (click)="retirerFichier(i)">✕</button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="!formulaireValide || isSubmitting()">
+            @if (isSubmitting()) {
+              Envoi en cours...
+            } @else {
+              Déclarer le sinistre
+            }
+          </button>
+        </div>
+      </form>
+    }
+  }
+</div>

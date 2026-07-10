@@ -1,0 +1,523 @@
+$primary-color: #2563eb;
+$primary-dark: #1d4ed8;
+$text-color: #1e293b;
+$text-muted: #64748b;
+$border-color: #e2e8f0;
+$success-color: #10b981;
+$error-color: #ef4444;
+
+.wizard-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+}
+
+// Header
+.wizard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid $border-color;
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-weight: 700;
+    color: $text-color;
+
+    .logo-icon { font-size: 1.5rem; }
+  }
+
+  .btn-save {
+    padding: 0.5rem 1rem;
+    border: 1px solid $border-color;
+    border-radius: 6px;
+    background: white;
+    color: $text-muted;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+  }
+}
+
+// Progress
+.progress-section {
+  background: white;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid $border-color;
+}
+
+.progress-bar {
+  height: 4px;
+  background: $border-color;
+  border-radius: 2px;
+  margin-bottom: 1.5rem;
+
+  .progress-fill {
+    height: 100%;
+    background: $primary-color;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+}
+
+.steps-nav {
+  display: flex;
+  justify-content: space-between;
+  max-width: 800px;
+  margin: 0 auto;
+
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    gap: 0.5rem;
+    justify-content: flex-start;
+    padding-bottom: 0.5rem;
+  }
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  .step-icon {
+    font-size: 1.5rem;
+    opacity: 0.5;
+  }
+
+  .step-title {
+    font-size: 0.8rem;
+    color: $text-muted;
+    white-space: nowrap;
+  }
+
+  &.active {
+    .step-icon { opacity: 1; }
+    .step-title { color: $primary-color; font-weight: 600; }
+  }
+
+  &.completed {
+    .step-icon { opacity: 1; }
+    .step-title { color: $success-color; }
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+  }
+}
+
+// Content
+.wizard-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.step-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  h2 {
+    font-size: 1.5rem;
+    color: $text-color;
+    margin-bottom: 0.5rem;
+  }
+
+  .step-description {
+    color: $text-muted;
+    margin-bottom: 2rem;
+  }
+}
+
+// Forms
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: block;
+    font-weight: 500;
+    color: $text-color;
+    margin-bottom: 0.5rem;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid $border-color;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+    }
+  }
+
+  .error {
+    display: block;
+    color: $error-color;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+  }
+
+  .field-hint {
+    display: block;
+    color: $text-muted;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+  }
+}
+
+.mt-2 { margin-top: 1rem; }
+
+// Radio & Checkbox cards
+.radio-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  &.vertical {
+    flex-direction: column;
+  }
+}
+
+.radio-card, .checkbox-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border: 2px solid $border-color;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  min-width: 150px;
+
+  input {
+    display: none;
+  }
+
+  .radio-icon, .checkbox-icon {
+    font-size: 1.5rem;
+  }
+
+  &.selected {
+    border-color: $primary-color;
+    background: rgba($primary-color, 0.05);
+  }
+
+  &:hover:not(.selected) {
+    border-color: rgba($primary-color, 0.5);
+  }
+
+  &.large {
+    padding: 1.5rem;
+    flex-direction: row;
+
+    .radio-content {
+      .radio-title {
+        display: block;
+        font-weight: 600;
+        color: $text-color;
+      }
+      .radio-description {
+        display: block;
+        font-size: 0.9rem;
+        color: $text-muted;
+        margin-top: 0.25rem;
+      }
+    }
+  }
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.checkbox-card {
+  flex-direction: column;
+  text-align: center;
+  position: relative;
+
+  .checkbox-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: $success-color;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .checkbox-label {
+    font-weight: 500;
+  }
+}
+
+.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: auto;
+  }
+}
+
+// Number selector
+.number-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  .number-btn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid $border-color;
+    border-radius: 10px;
+    background: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &.selected {
+      border-color: $primary-color;
+      background: $primary-color;
+      color: white;
+    }
+
+    &:hover:not(.selected) {
+      border-color: $primary-color;
+    }
+  }
+}
+
+// Formules
+.formules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formule-card {
+  padding: 1.5rem;
+  border: 2px solid $border-color;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  input { display: none; }
+
+  &.selected {
+    border-color: $primary-color;
+    background: rgba($primary-color, 0.05);
+  }
+
+  .formule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+
+    .formule-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: $text-color;
+    }
+
+    .formule-badge {
+      background: #fef3c7;
+      color: #b45309;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+  }
+
+  .formule-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      padding: 0.4rem 0;
+      color: $text-muted;
+      font-size: 0.9rem;
+
+      &::before {
+        content: '✓';
+        color: $success-color;
+        margin-right: 0.5rem;
+      }
+    }
+  }
+}
+
+// Options
+.options-section {
+  h3 {
+    font-size: 1.1rem;
+    color: $text-color;
+    margin-bottom: 1rem;
+  }
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.option-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 2px solid $border-color;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  input { display: none; }
+
+  &.selected {
+    border-color: $primary-color;
+    background: rgba($primary-color, 0.05);
+  }
+
+  .option-label {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .option-price {
+    color: $text-muted;
+    font-size: 0.9rem;
+  }
+}
+
+// Footer
+.wizard-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  background: white;
+  border-top: 1px solid $border-color;
+}
+
+// Buttons
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+
+  &.btn-primary {
+    background: $primary-color;
+    color: white;
+
+    &:hover:not(:disabled) { background: $primary-dark; }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+
+  &.btn-outline {
+    background: white;
+    border: 2px solid $border-color;
+    color: $text-color;
+
+    &:hover:not(:disabled) { border-color: $primary-color; color: $primary-color; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  &.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+  }
+}
+
+// Loading
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid $border-color;
+    border-top-color: $primary-color;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    margin-top: 1rem;
+    color: $text-muted;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+
+  &.alert-error {
+    background: #fef2f2;
+    color: $error-color;
+    border: 1px solid #fecaca;
+  }
+}

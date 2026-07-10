@@ -1,0 +1,109 @@
+<div class="mes-devis">
+  <div class="page-header">
+    <div>
+      <h1>Mes devis</h1>
+      <p>Gérez vos demandes de devis et poursuivez vos souscriptions</p>
+    </div>
+    <a routerLink="/devis" class="btn btn-primary">
+      + Nouveau devis
+    </a>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filters">
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'all'"
+      (click)="setFilter('all')"
+    >
+      Tous
+    </button>
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'brouillon'"
+      (click)="setFilter('brouillon')"
+    >
+      Brouillons
+    </button>
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'devis'"
+      (click)="setFilter('devis')"
+    >
+      Devis calculés
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else if (filteredDevis.length === 0) {
+    <div class="empty-state">
+      <span class="empty-icon">📋</span>
+      <h2>Aucun devis</h2>
+      <p>Vous n'avez pas encore de devis. Commencez par en créer un !</p>
+      <a routerLink="/devis" class="btn btn-primary">
+        Créer mon premier devis
+      </a>
+    </div>
+  } @else {
+    <div class="devis-list">
+      @for (d of filteredDevis; track d.id) {
+        <a
+          [routerLink]="d.statut === 'DEVIS' ? ['/devis', d.id, 'resultat'] : ['/devis', d.id]"
+          class="devis-card"
+        >
+          <div class="devis-header">
+            <span class="devis-ref">DEV-{{ d.id }}</span>
+            <span class="badge" [ngClass]="getStatutClass(d.statut)">
+              {{ getStatutLabel(d.statut) }}
+            </span>
+          </div>
+
+          <div class="devis-body">
+            <div class="devis-product">
+              <span class="product-icon">🏠</span>
+              <span class="product-name">Assurance Habitation</span>
+            </div>
+
+            @if (d.adresseResume) {
+              <p class="devis-address">{{ d.adresseResume }}</p>
+            }
+
+            @if (d.formuleResume) {
+              <p class="devis-formule">Formule {{ d.formuleResume }}</p>
+            }
+
+            @if (d.primeTTCResume) {
+              <p class="devis-price">{{ d.primeTTCResume }}</p>
+            }
+          </div>
+
+          <div class="devis-footer">
+            <span class="devis-date">
+              {{ d.statut === 'BROUILLON' ? 'Modifié le' : 'Créé le' }}
+              {{ formatDate(d.updatedAt) }}
+            </span>
+
+            <div class="devis-actions">
+              @if (d.statut === 'BROUILLON') {
+                <span class="action-link">Reprendre →</span>
+              } @else {
+                <span class="action-link">Voir le détail →</span>
+              }
+              <button
+                class="btn-delete"
+                (click)="supprimerDevis(d.id, $event)"
+                title="Supprimer"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,333 @@
+<div class="wizard-container">
+  <!-- Header -->
+  <header class="wizard-header">
+    <a routerLink="/dashboard" class="logo">
+      <span class="logo-icon">🛡️</span>
+      <span class="logo-text">IARD Assurances</span>
+    </a>
+    <button class="btn-save" (click)="sauvegarderEtQuitter()" [disabled]="isSaving()">
+      {{ isSaving() ? 'Sauvegarde...' : 'Enregistrer et quitter' }}
+    </button>
+  </header>
+
+  <!-- Progress -->
+  <div class="progress-section">
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="progress()"></div>
+    </div>
+    <div class="steps-nav">
+      @for (step of steps; track step.number) {
+        <button
+          class="step-item"
+          [class.active]="currentStep() === step.number"
+          [class.completed]="currentStep() > step.number"
+          [class.disabled]="currentStep() < step.number"
+          (click)="goToStep(step.number)"
+        >
+          <span class="step-icon">{{ step.icon }}</span>
+          <span class="step-title">{{ step.title }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Chargement...</p>
+    </div>
+  } @else {
+    <!-- Step Content -->
+    <main class="wizard-content">
+      @if (errorMessage()) {
+        <div class="alert alert-error">{{ errorMessage() }}</div>
+      }
+
+      <!-- Étape 1: Le bien -->
+      @if (currentStep() === 1) {
+        <div class="step-content">
+          <h2>Décrivez votre bien</h2>
+          <p class="step-description">Commençons par les caractéristiques de votre logement</p>
+
+          <form [formGroup]="formBien" class="form-grid">
+            <div class="form-group full-width">
+              <label>Type de bien *</label>
+              <div class="radio-group">
+                @for (type of typesBien; track type) {
+                  <label class="radio-card" [class.selected]="formBien.get('typeBien')?.value === type">
+                    <input type="radio" formControlName="typeBien" [value]="type">
+                    <span class="radio-icon">{{ type === 'APPARTEMENT' ? '🏢' : '🏡' }}</span>
+                    <span>{{ getTypeBienLabel(type) }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Type de résidence *</label>
+              <div class="radio-group">
+                @for (type of typesResidence; track type) {
+                  <label class="radio-card" [class.selected]="formBien.get('typeResidence')?.value === type">
+                    <input type="radio" formControlName="typeResidence" [value]="type">
+                    <span>{{ getTypeResidenceLabel(type) }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="adresse">Adresse *</label>
+              <input type="text" id="adresse" formControlName="adresse" placeholder="123 rue de la Paix">
+              @if (formBien.get('adresse')?.invalid && formBien.get('adresse')?.touched) {
+                <span class="error">L'adresse est requise (min 5 caractères)</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="codePostal">Code postal *</label>
+              <input type="text" id="codePostal" formControlName="codePostal" placeholder="75001" maxlength="5">
+              @if (formBien.get('codePostal')?.invalid && formBien.get('codePostal')?.touched) {
+                <span class="error">Code postal invalide (5 chiffres)</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="ville">Ville *</label>
+              <input type="text" id="ville" formControlName="ville" placeholder="Paris">
+            </div>
+
+            <div class="form-group">
+              <label for="surfaceHabitable">Surface habitable (m²) *</label>
+              <input type="number" id="surfaceHabitable" formControlName="surfaceHabitable" placeholder="80" min="9" max="500">
+              @if (formBien.get('surfaceHabitable')?.invalid && formBien.get('surfaceHabitable')?.touched) {
+                <span class="error">Entre 9 et 500 m²</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="nombrePieces">Nombre de pièces *</label>
+              <input type="number" id="nombrePieces" formControlName="nombrePieces" placeholder="4" min="1" max="20">
+            </div>
+
+            @if (formBien.get('typeBien')?.value === 'APPARTEMENT') {
+              <div class="form-group">
+                <label for="etage">Étage *</label>
+                <input type="number" id="etage" formControlName="etage" placeholder="3" min="0" max="50">
+              </div>
+            }
+
+            <div class="form-group">
+              <label for="anneeConstruction">Année de construction *</label>
+              <input type="number" id="anneeConstruction" formControlName="anneeConstruction" placeholder="1990" min="1800">
+            </div>
+          </form>
+        </div>
+      }
+
+      <!-- Étape 2: Occupation -->
+      @if (currentStep() === 2) {
+        <div class="step-content">
+          <h2>Votre statut d'occupation</h2>
+          <p class="step-description">Quel est votre lien avec ce logement ?</p>
+
+          <form [formGroup]="formOccupation">
+            <div class="form-group">
+              <div class="radio-group vertical">
+                @for (statut of statutsOccupation; track statut) {
+                  <label class="radio-card large" [class.selected]="formOccupation.get('statutOccupation')?.value === statut">
+                    <input type="radio" formControlName="statutOccupation" [value]="statut">
+                    <div class="radio-content">
+                      <span class="radio-title">{{ getStatutOccupationLabel(statut) }}</span>
+                      <span class="radio-description">
+                        @switch (statut) {
+                          @case ('PROPRIETAIRE_OCCUPANT') { Vous êtes propriétaire et habitez ce logement }
+                          @case ('LOCATAIRE') { Vous louez ce logement }
+                          @case ('PROPRIETAIRE_NON_OCCUPANT') { Vous êtes propriétaire mais n'y habitez pas }
+                        }
+                      </span>
+                    </div>
+                  </label>
+                }
+              </div>
+            </div>
+          </form>
+        </div>
+      }
+
+      <!-- Étape 3: Sécurité -->
+      @if (currentStep() === 3) {
+        <div class="step-content">
+          <h2>Sécurité et spécificités</h2>
+          <p class="step-description">Ces éléments peuvent réduire votre prime</p>
+
+          <form [formGroup]="formSecurite">
+            <div class="checkbox-grid">
+              <label class="checkbox-card" [class.selected]="formSecurite.get('alarme')?.value">
+                <input type="checkbox" formControlName="alarme">
+                <span class="checkbox-icon">🚨</span>
+                <span class="checkbox-label">Alarme</span>
+                <span class="checkbox-badge">-5%</span>
+              </label>
+
+              <label class="checkbox-card" [class.selected]="formSecurite.get('porteBlindee')?.value">
+                <input type="checkbox" formControlName="porteBlindee">
+                <span class="checkbox-icon">🚪</span>
+                <span class="checkbox-label">Porte blindée</span>
+                <span class="checkbox-badge">-3%</span>
+              </label>
+
+              <label class="checkbox-card" [class.selected]="formSecurite.get('dependances')?.value">
+                <input type="checkbox" formControlName="dependances">
+                <span class="checkbox-icon">🏚️</span>
+                <span class="checkbox-label">Dépendances</span>
+              </label>
+
+              <label class="checkbox-card" [class.selected]="formSecurite.get('piscine')?.value">
+                <input type="checkbox" formControlName="piscine">
+                <span class="checkbox-icon">🏊</span>
+                <span class="checkbox-label">Piscine</span>
+              </label>
+            </div>
+
+            @if (formSecurite.get('dependances')?.value) {
+              <div class="form-group mt-2">
+                <label for="surfaceDependances">Surface des dépendances (m²) *</label>
+                <input type="number" id="surfaceDependances" formControlName="surfaceDependances" placeholder="20" min="1">
+              </div>
+            }
+          </form>
+        </div>
+      }
+
+      <!-- Étape 4: Contenu -->
+      @if (currentStep() === 4) {
+        <div class="step-content">
+          <h2>Évaluation du contenu</h2>
+          <p class="step-description">Estimez la valeur de vos biens à assurer</p>
+
+          <form [formGroup]="formContenu">
+            <div class="form-group">
+              <label for="capitalMobilier">Capital mobilier à assurer (€) *</label>
+              <input type="number" id="capitalMobilier" formControlName="capitalMobilier"
+                     placeholder="30000" min="5000" max="500000" step="1000">
+              <span class="field-hint">Valeur totale de vos meubles et effets personnels</span>
+              @if (formContenu.get('capitalMobilier')?.invalid && formContenu.get('capitalMobilier')?.touched) {
+                <span class="error">Entre 5 000 € et 500 000 €</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-inline">
+                <input type="checkbox" formControlName="objetsValeur">
+                Possédez-vous des objets de valeur ? (bijoux, œuvres d'art, etc.)
+              </label>
+            </div>
+
+            @if (formContenu.get('objetsValeur')?.value) {
+              <div class="form-group">
+                <label for="valeurObjetsValeur">Valeur des objets de valeur (€) *</label>
+                <input type="number" id="valeurObjetsValeur" formControlName="valeurObjetsValeur"
+                       placeholder="5000" min="1000">
+              </div>
+            }
+          </form>
+        </div>
+      }
+
+      <!-- Étape 5: Antécédents -->
+      @if (currentStep() === 5) {
+        <div class="step-content">
+          <h2>Vos antécédents</h2>
+          <p class="step-description">Historique des sinistres sur les 36 derniers mois</p>
+
+          <form [formGroup]="formAntecedents">
+            <div class="form-group">
+              <label for="nombreSinistres36Mois">Nombre de sinistres déclarés *</label>
+              <div class="number-selector">
+                @for (n of [0, 1, 2, 3, 4, 5]; track n) {
+                  <button type="button"
+                          class="number-btn"
+                          [class.selected]="formAntecedents.get('nombreSinistres36Mois')?.value === n"
+                          (click)="formAntecedents.get('nombreSinistres36Mois')?.setValue(n)">
+                    {{ n }}
+                  </button>
+                }
+              </div>
+              <span class="field-hint">Tous types de sinistres confondus (dégât des eaux, vol, etc.)</span>
+            </div>
+          </form>
+        </div>
+      }
+
+      <!-- Étape 6: Formule -->
+      @if (currentStep() === 6) {
+        <div class="step-content">
+          <h2>Choisissez votre formule</h2>
+          <p class="step-description">Sélectionnez le niveau de protection adapté à vos besoins</p>
+
+          <form [formGroup]="formFormule">
+            <div class="formules-grid">
+              @for (formule of formules; track formule) {
+                <label class="formule-card" [class.selected]="formFormule.get('formule')?.value === formule">
+                  <input type="radio" formControlName="formule" [value]="formule">
+                  <div class="formule-header">
+                    <span class="formule-name">{{ getFormuleLabel(formule) }}</span>
+                    @if (formule === 'CONFORT') {
+                      <span class="formule-badge">Populaire</span>
+                    }
+                  </div>
+                  <ul class="formule-features">
+                    <li>Incendie et explosion</li>
+                    <li>Dégâts des eaux</li>
+                    <li>Catastrophes naturelles</li>
+                    <li>RC vie privée</li>
+                    @if (formule === 'CONFORT' || formule === 'PREMIUM') {
+                      <li>Vol et vandalisme</li>
+                      <li>Bris de glace</li>
+                    }
+                    @if (formule === 'PREMIUM') {
+                      <li>Dommages électriques</li>
+                      <li>Assistance 24h/24</li>
+                    }
+                  </ul>
+                </label>
+              }
+            </div>
+
+            <div class="options-section">
+              <h3>Options supplémentaires</h3>
+              <div class="options-grid">
+                @for (option of optionsGaranties; track option.code) {
+                  <label class="option-card" [class.selected]="isOptionSelected(option.code)">
+                    <input type="checkbox" [checked]="isOptionSelected(option.code)"
+                           (change)="toggleOption(option.code)">
+                    <span class="option-label">{{ option.label }}</span>
+                    <span class="option-price">+{{ option.prix }} €/an</span>
+                  </label>
+                }
+              </div>
+            </div>
+          </form>
+        </div>
+      }
+    </main>
+
+    <!-- Footer Navigation -->
+    <footer class="wizard-footer">
+      <button class="btn btn-outline" (click)="previousStep()" [disabled]="currentStep() === 1">
+        ← Précédent
+      </button>
+
+      @if (currentStep() < totalSteps) {
+        <button class="btn btn-primary" (click)="nextStep()" [disabled]="!isCurrentStepValid()">
+          Suivant →
+        </button>
+      } @else {
+        <button class="btn btn-primary btn-lg" (click)="calculerTarif()"
+                [disabled]="!isCurrentStepValid() || isLoading()">
+          {{ isLoading() ? 'Calcul en cours...' : 'Calculer mon tarif' }}
+        </button>
+      }
+    </footer>
+  }
+</div>

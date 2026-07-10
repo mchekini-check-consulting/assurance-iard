@@ -1,0 +1,27 @@
+# Secrets
+.env
+
+# Build
+**/target/
+**/dist/
+**/node_modules/
+**/.angular/
+
+# IDE
+.idea/
+*.iml
+
+# Données locales
+uploads/
+
+# Artefacts hors application (prompts de génération, maquettes, PDF générés)
+prompt*
+pdfs/
+/dashboard.html
+/Landing Page IARD.html
+
+# Config locale Claude Code
+.claude/
+
+# macOS
+.DS_Store

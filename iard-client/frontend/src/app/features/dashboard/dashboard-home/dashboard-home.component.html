@@ -1,0 +1,81 @@
+<div class="dashboard-home">
+  <!-- Hero Banner -->
+  <div class="hero-banner">
+    <div class="hero-circle-1"></div>
+    <div class="hero-circle-2"></div>
+    <h1>Bonjour {{ authService.currentUser()?.prenom }} !</h1>
+    <p>Bienvenue dans votre espace personnel IARD Assurances</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-header">
+          <svg lucidePenLine [size]="17"></svg>
+          <span>Devis en cours</span>
+        </div>
+        <div class="stat-value">{{ devisEnCours() }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <svg lucideCheckCheck [size]="17"></svg>
+          <span>Devis terminés</span>
+        </div>
+        <div class="stat-value">{{ devisTermines() }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <svg lucideShieldCheck [size]="17"></svg>
+          <span>Contrats actifs</span>
+        </div>
+        <div class="stat-value">{{ contratsActifs() }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <svg lucideFileSignature [size]="17"></svg>
+          <span>En attente de signature</span>
+        </div>
+        <div class="stat-value">{{ contratsEnAttente() }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions rapides -->
+  <h2 class="section-title">Actions rapides</h2>
+  <div class="quick-actions-grid">
+    <a routerLink="/devis" class="action-card primary">
+      <span class="action-icon">
+        <svg lucideHome [size]="24"></svg>
+      </span>
+      <div class="action-title">Nouveau devis Habitation</div>
+      <div class="action-subtitle">Estimation en 2 minutes</div>
+      <span class="action-link">
+        Démarrer <svg lucideArrowRight [size]="16"></svg>
+      </span>
+    </a>
+    <div class="action-card disabled">
+      <span class="badge">Bientôt</span>
+      <span class="action-icon muted">
+        <svg lucideCarFront [size]="24"></svg>
+      </span>
+      <div class="action-title">Nouveau devis Auto</div>
+      <div class="action-subtitle">Disponible prochainement</div>
+    </div>
+    <div class="action-card disabled">
+      <span class="badge">Bientôt</span>
+      <span class="action-icon muted">
+        <svg lucideBriefcaseBusiness [size]="24"></svg>
+      </span>
+      <div class="action-title">Nouveau devis RC Pro</div>
+      <div class="action-subtitle">Disponible prochainement</div>
+    </div>
+  </div>
+
+  <!-- Activité récente -->
+  <h2 class="section-title">Activité récente</h2>
+  <div class="activity-empty">
+    <div class="activity-icon">
+      <svg lucideClipboardList [size]="25"></svg>
+    </div>
+    <div class="activity-title">Aucune activité récente</div>
+    <div class="activity-subtitle">Vos dernières actions apparaîtront ici</div>
+  </div>
+</div>

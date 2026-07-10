@@ -1,0 +1,50 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: #f4f6f9;
+  color: #1f2937;
+  font-size: 15px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-a-traiter {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-en-cours {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-approuve {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-rejete {
+  background: #fee2e2;
+  color: #991b1b;
+}

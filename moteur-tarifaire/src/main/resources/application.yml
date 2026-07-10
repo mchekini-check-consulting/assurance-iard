@@ -1,0 +1,55 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: moteur-tarifaire
+
+tarification:
+  # Prime de base par m² et par an
+  base:
+    appartement: 1.20
+    maison: 1.60
+
+  # Coefficients multiplicateurs
+  coefficients:
+    statut-occupation:
+      proprietaire-occupant: 1.0
+      locataire: 0.9
+      proprietaire-non-occupant: 1.15
+    zone:
+      faible: 0.9
+      moyenne: 1.0
+      elevee: 1.25
+    sinistralite:
+      zero: 1.0
+      un: 1.15
+      deux-plus: 1.35
+    pieces-supplementaires: 0.05  # +5% par pièce au-delà de 3
+    reduction-securite: 0.10      # -10% si alarme + porte blindée
+
+  # Capital mobilier
+  taux-capital-mobilier: 0.004    # 0,4% du capital mobilier
+
+  # Forfaits par formule
+  forfaits:
+    essentielle: 0
+    confort: 45
+    premium: 90
+
+  # Garanties optionnelles (montant fixe par an)
+  garanties-optionnelles:
+    piscine: 30
+    dependances: 25
+    objets-valeur: 40
+    equipement-jardin: 20
+
+  # Taxes
+  taux-tsca: 0.30               # 30% TSCA
+  contribution-fonds-garantie: 6.50
+
+  # Zones par premier chiffre du code postal
+  zones-code-postal:
+    faible: [1, 2, 3, 4, 5]      # Zones rurales
+    moyenne: [6, 7, 8]           # Zones intermédiaires
+    elevee: [9, 0]               # Zones urbaines/risquées (Paris, grandes villes)

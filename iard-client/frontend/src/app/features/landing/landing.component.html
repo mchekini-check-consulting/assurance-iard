@@ -1,0 +1,203 @@
+<div class="landing-page">
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <a routerLink="/" class="logo">
+      <span class="logo-icon">
+        <svg lucideShieldCheck [size]="18"></svg>
+      </span>
+      <span class="logo-text">IARD <span class="logo-light">Assurances</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="#products" class="nav-link">Nos produits</a>
+      <a href="#testimonials" class="nav-link">Avis clients</a>
+      <a href="#advantages" class="nav-link">Pourquoi nous</a>
+    </div>
+    <div class="nav-actions">
+      <a routerLink="/login" class="btn btn-ghost">Se connecter</a>
+      <a routerLink="/register" class="btn btn-white">Créer un compte</a>
+    </div>
+    <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+      <svg lucideMenu [size]="24"></svg>
+    </button>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-circle-1"></div>
+    <div class="hero-circle-2"></div>
+    <span class="hero-badge">
+      <svg lucideSparkles [size]="15"></svg>
+      Assurance nouvelle génération
+    </span>
+    <h1 class="hero-title">Votre assurance, enfin simple et instantanée</h1>
+    <p class="hero-subtitle">Comparez, souscrivez et gérez tout en ligne. Un devis gratuit en 2 minutes, sans paperasse ni engagement.</p>
+    <div class="hero-actions">
+      <a href="#products" class="btn btn-white-solid">Découvrir nos offres</a>
+      <a routerLink="/register" class="btn btn-ghost">Créer mon compte</a>
+    </div>
+    <!-- Stats Card -->
+    <div class="hero-stats">
+      @for (stat of stats; track stat.label) {
+        <div class="stat-item">
+          <div class="stat-value">{{ stat.value }}</div>
+          <div class="stat-label">{{ stat.label }}</div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Products Section -->
+  <section id="products" class="products-section">
+    <h2 class="section-title">Nos produits d'assurance</h2>
+    <p class="section-subtitle">Choisissez la protection qui vous correspond</p>
+    <div class="products-grid">
+      @for (product of products; track product.id) {
+        <div class="product-card" [class.featured]="product.available">
+          @if (product.available) {
+            <span class="product-badge">Populaire</span>
+          }
+          <span class="product-icon" [class.featured]="product.available">
+            @switch (product.id) {
+              @case ('auto') { <svg lucideCarFront [size]="25"></svg> }
+              @case ('habitation') { <svg lucideHouse [size]="25"></svg> }
+              @case ('rcpro') { <svg lucideBriefcaseBusiness [size]="25"></svg> }
+            }
+          </span>
+          <h3 class="product-title">{{ product.title }}</h3>
+          <p class="product-description">{{ product.description }}</p>
+          @if (product.available) {
+            <a routerLink="/register" class="btn btn-white-solid">Obtenir un devis</a>
+          } @else {
+            <button class="btn btn-disabled">Bientôt disponible</button>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- How it works Section -->
+  <section class="how-it-works">
+    <div class="how-it-works-inner">
+      <h2 class="section-title">Souscrire n'a jamais été aussi simple</h2>
+      <p class="section-subtitle">Assuré en 3 étapes, sans rendez-vous</p>
+      <div class="steps-grid">
+        @for (step of steps; track step.number) {
+          <div class="step-card">
+            <div class="step-number">{{ step.number }}</div>
+            <h3 class="step-title">{{ step.title }}</h3>
+            <p class="step-description">{{ step.description }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section id="testimonials" class="testimonials-section">
+    <h2 class="section-title">Ce que disent nos clients</h2>
+    <p class="section-subtitle">Découvrez les avis de ceux qui nous font confiance</p>
+    <div class="testimonials-grid">
+      @for (testimonial of testimonials; track testimonial.name) {
+        <div class="testimonial-card">
+          <div class="testimonial-stars">
+            @for (star of getStars(testimonial.rating); track $index) {
+              <svg lucideStar [size]="16" class="star-filled"></svg>
+            }
+            @for (star of getEmptyStars(testimonial.rating); track $index) {
+              <svg lucideStar [size]="16" class="star-empty"></svg>
+            }
+          </div>
+          <p class="testimonial-comment">« {{ testimonial.comment }} »</p>
+          <div class="testimonial-author">
+            <span class="author-avatar">{{ getInitials(testimonial.name) }}</span>
+            <div class="author-info">
+              <div class="author-name">{{ testimonial.name }}</div>
+              <div class="author-role">{{ testimonial.role }}</div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Advantages Section -->
+  <section id="advantages" class="advantages-section">
+    <h2 class="section-title">Pourquoi nous choisir ?</h2>
+    <p class="section-subtitle">Des avantages qui font la différence</p>
+    <div class="advantages-grid">
+      @for (advantage of advantages; track advantage.title) {
+        <div class="advantage-card">
+          <span class="advantage-icon">
+            @switch (advantage.icon) {
+              @case ('zap') { <svg lucideZap [size]="22"></svg> }
+              @case ('search') { <svg lucideSearch [size]="22"></svg> }
+              @case ('unlock') { <svg lucideUnlock [size]="22"></svg> }
+              @case ('messages') { <svg lucideMessagesSquare [size]="22"></svg> }
+            }
+          </span>
+          <h3 class="advantage-title">{{ advantage.title }}</h3>
+          <p class="advantage-description">{{ advantage.description }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="faq-section">
+    <h2 class="section-title">Questions fréquentes</h2>
+    <div class="faq-list">
+      @for (faq of faqs; track faq.question) {
+        <details class="faq-item">
+          <summary class="faq-question">
+            {{ faq.question }}
+            <svg lucidePlus [size]="20" class="faq-icon"></svg>
+          </summary>
+          <p class="faq-answer">{{ faq.answer }}</p>
+        </details>
+      }
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="cta-section">
+    <div class="cta-card">
+      <div class="cta-circle"></div>
+      <h2 class="cta-title">Prêt à protéger l'essentiel ?</h2>
+      <p class="cta-subtitle">Créez votre compte et obtenez votre premier devis gratuitement.</p>
+      <a routerLink="/register" class="btn btn-white-solid">Créer mon compte</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span class="footer-logo-icon">
+            <svg lucideShieldCheck [size]="17"></svg>
+          </span>
+          <span class="footer-logo-text">IARD Assurances</span>
+        </div>
+        <p class="footer-tagline">Votre partenaire assurance de confiance, 100% en ligne.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-column">
+          <h4>Légal</h4>
+          <a href="#">Mentions légales</a>
+          <a href="#">CGU</a>
+          <a href="#">Politique de confidentialité</a>
+          <a href="#">RGPD</a>
+        </div>
+        <div class="footer-column">
+          <h4>Contact</h4>
+          <a href="#">Nous contacter</a>
+          <a href="#">Support</a>
+          <a href="#">FAQ</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 IARD Assurances. Tous droits réservés.</p>
+    </div>
+  </footer>
+</div>

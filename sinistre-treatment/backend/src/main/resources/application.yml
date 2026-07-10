@@ -1,0 +1,28 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: sinistre-treatment
+
+  datasource:
+    url: jdbc:postgresql://${SINISTRE_DB_HOST:localhost}:${SINISTRE_DB_PORT:5433}/${SINISTRE_DB_NAME:sinistre_db}
+    username: ${SINISTRE_DB_USER:sinistre_user}
+    password: ${SINISTRE_DB_PASSWORD:sinistre_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+logging:
+  level:
+    com.iard.sinistre: INFO

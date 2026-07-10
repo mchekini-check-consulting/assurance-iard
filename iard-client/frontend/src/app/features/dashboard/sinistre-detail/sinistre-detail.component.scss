@@ -1,0 +1,248 @@
+$primary-color: #2563eb;
+$text-color: #1e293b;
+$text-muted: #64748b;
+$border-color: #e2e8f0;
+
+.sinistre-detail {
+  max-width: 900px;
+}
+
+.back-link {
+  display: inline-block;
+  color: $text-muted;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+
+  &:hover { color: $text-color; }
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    font-size: 1.5rem;
+    color: $text-color;
+    margin-bottom: 0.25rem;
+    font-family: monospace;
+  }
+
+  p {
+    color: $text-muted;
+  }
+}
+
+.badge {
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  &.badge-warning { background: #fef3c7; color: #b45309; }
+  &.badge-primary { background: #dbeafe; color: #1d4ed8; }
+  &.badge-success { background: #d1fae5; color: #047857; }
+  &.badge-error { background: #fee2e2; color: #b91c1c; }
+  &.badge-muted { background: #f1f5f9; color: $text-muted; }
+}
+
+.decision-banner {
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+
+  &.approuve {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &.rejete {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .decision-comment {
+    margin-top: 0.5rem;
+  }
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+
+  h2 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: $text-muted;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: $text-muted;
+    margin: 1.25rem 0 0.5rem;
+  }
+}
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  position: relative;
+
+  li {
+    display: flex;
+    gap: 0.9rem;
+    padding-bottom: 1.25rem;
+    position: relative;
+
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 16px;
+      bottom: 0;
+      width: 2px;
+      background: $border-color;
+    }
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+    padding: 0;
+    z-index: 1;
+  }
+
+  .timeline-content {
+    display: flex;
+    flex-direction: column;
+
+    strong {
+      color: $text-color;
+      font-size: 0.95rem;
+    }
+
+    .timeline-date {
+      color: $text-muted;
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+  }
+}
+
+.timeline-hint {
+  color: $text-muted;
+  font-size: 0.85rem;
+  border-top: 1px solid $border-color;
+  padding-top: 0.75rem;
+}
+
+dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #f8fafc;
+
+  dt { color: $text-muted; font-size: 0.9rem; }
+  dd { font-weight: 600; font-size: 0.9rem; color: $text-color; text-align: right; }
+}
+
+.description {
+  color: $text-color;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.pieces-list {
+  list-style: none;
+  padding: 0;
+
+  li {
+    padding: 0.35rem 0;
+
+    a {
+      color: $primary-color;
+      text-decoration: none;
+      font-size: 0.9rem;
+
+      &:hover { text-decoration: underline; }
+    }
+  }
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+
+  &.btn-primary {
+    background: $primary-color;
+    color: white;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+
+  .empty-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    color: $text-color;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid $border-color;
+    border-top-color: $primary-color;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    margin-top: 1rem;
+    color: $text-muted;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
