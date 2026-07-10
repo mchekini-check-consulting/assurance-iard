@@ -112,5 +112,8 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose pull
             docker compose up -d --remove-orphans
+            # Recharger le reverse proxy : sa conf est montée en volume (un up -d
+            # ne le recrée pas) et nginx doit re-résoudre les IP des conteneurs recréés
+            docker compose restart reverse-proxy
             docker logout ghcr.io
             docker image prune -f
