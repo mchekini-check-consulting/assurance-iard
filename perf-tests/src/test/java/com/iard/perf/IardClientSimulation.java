@@ -46,6 +46,13 @@ public class IardClientSimulation extends Simulation {
                     Map.of("email", "perf-" + UUID.randomUUID().toString().substring(0, 12) + "@perf.iard.test"))
                     .iterator();
 
+    // Comptes pré-chargés en base (scripts/seed-perf-contrats.sql) :
+    // 200 utilisateurs perfseed-<1..200> portant chacun 50 contrats actifs
+    private final Iterator<Map<String, Object>> seedFeeder =
+            Stream.<Map<String, Object>>generate(() ->
+                    Map.of("seedEmail", "perfseed-" + (1 + (int) (Math.random() * 200)) + "@perf.iard.test"))
+                    .iterator();
+
     private final ScenarioBuilder parcoursClient = scenario("Parcours client IARD")
             .feed(emailFeeder)
 
@@ -142,9 +149,35 @@ public class IardClientSimulation extends Simulation {
                     .pause(Duration.ofMillis(500))
             );
 
+    // Scénario ciblant le portefeuille pré-chargé : chaque utilisateur liste
+    // ses 50 contrats (parmi les 10 000 en base) de façon répétée
+    private final ScenarioBuilder consultationPortefeuille = scenario("Consultation portefeuille (10k contrats)")
+            .feed(seedFeeder)
+            .exec(http("POST /auth/login (seed)")
+                    .post("/api/auth/login")
+                    .body(StringBody("""
+                            {"email": "#{seedEmail}", "password": "%s"}""".formatted(PASSWORD)))
+                    .check(status().is(200))
+                    .check(jsonPath("$.token").saveAs("token")))
+            .pause(1)
+            .repeat(10).on(
+                    exec(http("GET /contrats (50 par user)")
+                            .get("/api/contrats")
+                            .header("Authorization", "Bearer #{token}")
+                            .check(status().is(200))
+                            .check(jsonPath("$[*]").count().is(50)))
+                    .pause(Duration.ofMillis(500))
+                    .exec(http("GET /contrats/stats (seed)")
+                            .get("/api/contrats/stats")
+                            .header("Authorization", "Bearer #{token}")
+                            .check(status().is(200)))
+                    .pause(Duration.ofMillis(500))
+            );
+
     {
         setUp(
-                parcoursClient.injectOpen(rampUsers(USERS).during(Duration.ofSeconds(RAMP_SEC)))
+                parcoursClient.injectOpen(rampUsers(USERS).during(Duration.ofSeconds(RAMP_SEC))),
+                consultationPortefeuille.injectOpen(rampUsers(USERS).during(Duration.ofSeconds(RAMP_SEC)))
         ).protocols(httpProtocol)
          .assertions(
                 global().successfulRequests().percent().gt(95.0),
