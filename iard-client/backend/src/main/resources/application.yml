@@ -28,10 +28,12 @@ spring:
       max-file-size: 5MB
       max-request-size: 30MB
 
-# Stockage des pièces jointes de sinistres
+# Stockage des pièces jointes de sinistres et des PDF de contrats
 app:
   sinistre:
     upload-dir: ${SINISTRE_UPLOAD_DIR:./uploads/sinistres}
+  pdf:
+    storage-path: ${PDF_STORAGE_PATH:./pdfs}
 
 jwt:
   secret: ${JWT_SECRET:iard-secret-key-very-long-and-secure-at-least-256-bits-for-hs256-algorithm}

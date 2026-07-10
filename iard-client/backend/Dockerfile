@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B package -DskipTests
 # ---- Runtime ----
 FROM eclipse-temurin:24-jre
 RUN useradd -r -m app \
-    && mkdir -p /data/uploads && chown -R app:app /data/uploads
+    && mkdir -p /data/uploads /data/pdfs && chown -R app:app /data
 USER app
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar

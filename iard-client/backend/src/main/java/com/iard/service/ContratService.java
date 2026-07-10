@@ -205,18 +205,34 @@ public class ContratService {
     /**
      * Récupère le contenu PDF d'un contrat.
      */
+    @Transactional
     public byte[] getPdfContent(Long contratId, Long userId) {
         Contrat contrat = contratRepository.findByIdAndUserId(contratId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Contrat non trouvé"));
 
-        if (contrat.getPdfPath() == null) {
-            throw new IllegalStateException("PDF non disponible pour ce contrat");
+        // Cas nominal : le fichier existe sur le disque
+        if (contrat.getPdfPath() != null) {
+            try {
+                return pdfService.getPdfContent(contrat.getPdfPath());
+            } catch (Exception e) {
+                log.warn("PDF {} introuvable (fichier perdu ?), régénération : {}",
+                        contrat.getPdfPath(), e.getMessage());
+            }
         }
 
+        // Le PDF n'a jamais été généré ou le fichier a disparu (ex: conteneur
+        // recréé sans volume) : on le régénère depuis les données en base
         try {
-            return pdfService.getPdfContent(contrat.getPdfPath());
+            User user = contrat.getUser();
+            Devis devis = contrat.getDevis();
+            String pdfPath = contrat.getDateSignature() != null
+                    ? pdfService.regenererPdfSigne(contrat, user, devis)
+                    : pdfService.genererContratPdf(contrat, user, devis);
+            contrat.setPdfPath(pdfPath);
+            contratRepository.save(contrat);
+            return pdfService.getPdfContent(pdfPath);
         } catch (Exception e) {
-            log.error("Erreur lors de la lecture du PDF: {}", e.getMessage());
+            log.error("Erreur lors de la régénération du PDF: {}", e.getMessage());
             throw new IllegalStateException("Impossible de lire le PDF");
         }
     }

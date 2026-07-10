@@ -102,12 +102,14 @@ services:
       IARD_DB_PASSWORD: iard_password
       KAFKA_BOOTSTRAP_SERVERS: kafka:19092
       SINISTRE_UPLOAD_DIR: /data/uploads
+      PDF_STORAGE_PATH: /data/pdfs
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       JWT_SECRET: ${JWT_SECRET:-iard-secret-key-very-long-and-secure-at-least-256-bits-for-hs256-algorithm}
     ports:
       - "8080:8080"
     volumes:
       - uploads_data:/data/uploads
+      - pdfs_data:/data/pdfs
     depends_on:
       postgres:
         condition: service_healthy
@@ -165,3 +167,4 @@ volumes:
   postgres_sinistre_data:
   kafka_data:
   uploads_data:
+  pdfs_data:
