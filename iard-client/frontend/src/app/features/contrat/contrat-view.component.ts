@@ -61,9 +61,12 @@ import { Formule } from '../../core/models/devis.model';
             <div class="info-panel">
               <!-- Statut -->
               <div class="status-card" [class]="'status-' + contrat()!.statut.toLowerCase()">
-                @if (contrat()!.statut === 'EN_ATTENTE') {
+                @if (contrat()!.statut === 'EN_ATTENTE' && !contrat()!.dateSignature) {
                   <span class="status-icon">⏳</span>
                   <span class="status-text">En attente de signature</span>
+                } @else if (contrat()!.statut === 'EN_ATTENTE') {
+                  <span class="status-icon">✍️</span>
+                  <span class="status-text">Contrat signé — en attente du premier prélèvement</span>
                 } @else if (contrat()!.statut === 'ACTIF') {
                   <span class="status-icon">✅</span>
                   <span class="status-text">Contrat actif</span>
@@ -105,7 +108,7 @@ import { Formule } from '../../core/models/devis.model';
               </div>
 
               <!-- Zone de signature -->
-              @if (contrat()!.statut === 'EN_ATTENTE') {
+              @if (contrat()!.statut === 'EN_ATTENTE' && !contrat()!.dateSignature) {
                 <div class="signature-card">
                   <h4>Signature électronique</h4>
                   <p class="signature-info">
@@ -152,7 +155,7 @@ import { Formule } from '../../core/models/devis.model';
                     et confirmez avoir pris connaissance de la notice d'information.
                   </p>
                 </div>
-              } @else if (contrat()!.statut === 'ACTIF') {
+              } @else if (contrat()!.dateSignature) {
                 <div class="signed-card">
                   <h4>Contrat signé</h4>
                   <div class="signed-info">
@@ -161,6 +164,12 @@ import { Formule } from '../../core/models/devis.model';
                     <p><strong>Référence signature :</strong><br>
                     {{ contrat()!.signatureId }}</p>
                   </div>
+                  @if (contrat()!.statut === 'EN_ATTENTE') {
+                    <p class="activation-info">
+                      Votre contrat sera activé automatiquement après le premier
+                      prélèvement de votre prime mensuelle.
+                    </p>
+                  }
                   <a routerLink="/dashboard/contrats" class="btn-secondary">
                     Voir tous mes contrats
                   </a>
@@ -476,6 +485,17 @@ import { Formule } from '../../core/models/devis.model';
         font-size: 0.9rem;
         line-height: 1.5;
       }
+    }
+
+    .activation-info {
+      margin: 0 0 1rem 0;
+      padding: 0.75rem 1rem;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      color: #92400e;
+      font-size: 0.85rem;
+      line-height: 1.5;
     }
 
     .btn-secondary {

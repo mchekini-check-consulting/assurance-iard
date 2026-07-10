@@ -52,13 +52,17 @@ export class MesContratsComponent implements OnInit {
     this.filter.set(filter);
   }
 
-  getStatutLabel(statut: StatutContrat): string {
-    switch (statut) {
-      case StatutContrat.EN_ATTENTE: return 'En attente de signature';
+  getStatutLabel(contrat: Contrat): string {
+    switch (contrat.statut) {
+      case StatutContrat.EN_ATTENTE:
+        // Signé mais pas encore activé par le premier prélèvement
+        return contrat.dateSignature
+          ? 'Signé — en attente de prélèvement'
+          : 'En attente de signature';
       case StatutContrat.ACTIF: return 'Actif';
       case StatutContrat.SUSPENDU: return 'Suspendu';
       case StatutContrat.RESILIE: return 'Résilié';
-      default: return statut;
+      default: return contrat.statut;
     }
   }
 
