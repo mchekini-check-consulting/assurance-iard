@@ -29,6 +29,8 @@ public class ContratService {
     private final SignatureService signatureService;
     private final PdfService pdfService;
     private final KycService kycService;
+    private final PaiementService paiementService;
+    private final FactureService factureService;
 
     /**
      * Génère un contrat à partir d'un devis.
@@ -126,8 +128,7 @@ public class ContratService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
 
-        // Signer le contrat (reste EN_ATTENTE jusqu'au premier paiement réussi)
-        // Le batch de prélèvement passera le contrat en ACTIF après le premier paiement
+        // Signer le contrat
         contrat.setDateSignature(signatureService.horodater());
         contrat.setSignatureId(signatureService.genererSignatureId());
 
@@ -142,6 +143,22 @@ public class ContratService {
         devis.setStatut(StatutDevis.TRANSFORME);
         devisRepository.save(devis);
 
+        // Simuler le premier prélèvement immédiatement (au lieu d'attendre le
+        // batch quotidien de 6h) : paiement + facture si succès.
+        Paiement paiement = paiementService.executerPrelevement(contrat, LocalDate.now());
+        if (paiement.getStatut() == StatutPaiement.SUCCES) {
+            factureService.genererFacture(paiement, contrat, user);
+        } else {
+            log.warn("Premier prélèvement mocké en échec pour le contrat {} (montant {} € > seuil) ; "
+                            + "le contrat est activé malgré tout, le batch retentera le prélèvement",
+                    contrat.getNumeroContrat(), contrat.getMontantMensuelTTC());
+        }
+
+        // Le contrat est actif dès la signature, quel que soit le résultat du
+        // prélèvement mocké (qui échoue volontairement au-delà de 30 €/mois)
+        contrat.setStatut(StatutContrat.ACTIF);
+        contrat.setProchaineDatePrelevement(LocalDate.now().plusMonths(1));
+
         // Régénérer le PDF avec la signature
         try {
             String pdfPath = pdfService.regenererPdfSigne(contrat, user, devis);
@@ -151,7 +168,7 @@ public class ContratService {
         }
 
         contrat = contratRepository.save(contrat);
-        log.info("Contrat {} signé avec succès", contrat.getNumeroContrat());
+        log.info("Contrat {} signé et activé avec succès", contrat.getNumeroContrat());
 
         return toContratResponse(contrat);
     }
