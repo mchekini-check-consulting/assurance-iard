@@ -9,8 +9,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // Origines ouvertes : plateforme de formation, l'app est appelée depuis
+        // la VM (http://<ip>:81), les postes des stagiaires et des outils d'API
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:4300")
+                .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*");
     }
