@@ -1,0 +1,13 @@
+name: demo-cron
+
+on:
+  schedule:
+    - cron: "*/2 * * * *"
+  workflow_dispatch:
+
+jobs:
+  bonjour:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Écrire le message
+        run: echo "bonjour Mouhssine et kahina"
